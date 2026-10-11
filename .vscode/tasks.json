@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start frontend",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev", "--", "--port", "5173", "--strictPort"],
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^(?!)$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE.*",
+          "endsPattern": "Local:.*http://127\\.0\\.0\\.1:5173/"
+        }
+      }
+    }
+  ]
+}
