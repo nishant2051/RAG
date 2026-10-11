@@ -8,17 +8,35 @@ Set it explicitly for a frontend using another port, such as 5174.
 
 import ipaddress
 import os
+from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator
 
 
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+
 class Settings(BaseModel):
+    database_path: Path = BACKEND_ROOT / "data" / "rag.sqlite3"
     host: str = "127.0.0.1"
     port: int = Field(default=8000, ge=1, le=65535)
     environment: Literal["development", "production"] = "development"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"])
+
+    @field_validator("database_path", mode="before")
+    @classmethod
+    def local_database_path(cls, value: str | Path) -> Path:
+        raw = str(value)
+        if (not raw.strip() or raw != raw.strip() or ":" in raw
+            or "\\" in raw or raw.startswith("//") or "\x00" in raw):
+            raise ValueError("database_path must be a local SQLite file path, not a URL or :memory:")
+        path = Path(raw).expanduser()
+        path = (path if path.is_absolute() else BACKEND_ROOT / path).resolve()
+        if path.is_dir():
+            raise ValueError("database_path must name a file, not a directory")
+        return path
 
     @field_validator("host")
     @classmethod
@@ -48,7 +66,7 @@ class Settings(BaseModel):
 
 
 def load_settings() -> Settings:
-    values = {key: os.environ[f"RAG_{key.upper()}"] for key in ("host", "port", "environment") if f"RAG_{key.upper()}" in os.environ}
+    values = {key: os.environ[f"RAG_{key.upper()}"] for key in ("host", "port", "environment", "database_path") if f"RAG_{key.upper()}" in os.environ}
     if "RAG_CORS_ORIGINS" in os.environ:
         values["cors_origins"] = os.environ["RAG_CORS_ORIGINS"].split(",")
     return Settings.model_validate(values)

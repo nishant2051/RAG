@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** 2026-10-11
-**Status:** TASK-001, TASK-002 and TASK-003 implemented; TASK-001 combined scaffold smoke check remains pending.
+**Status:** TASK-001, TASK-002, TASK-003 and TASK-004 implemented; TASK-001 combined scaffold smoke check remains pending.
 
 ## Goal and scope
 
@@ -34,7 +34,7 @@ Each task below is a brief roadmap entry, **not a Codex instruction file**. Prep
 | TASK-001 — Repository scaffold and configuration | Python backend and React/Vite frontend structure, dev scripts, environment examples; no app features. | None | Completed |
 | TASK-002 — FastAPI entrypoint and health | Minimal FastAPI app, typed configuration, live/ready response shells and standard errors. | 001 | Completed |
 | TASK-003 — React application shell | Vite UI shell, API base URL configuration and minimal navigation. | 001 | Completed |
-| TASK-004 — SQLite engine and migrations | SQLAlchemy sessions, SQLite WAL/foreign keys, initial Alembic setup. | 002 | Planned |
+| TASK-004 — SQLite engine and migrations | SQLAlchemy sessions, SQLite WAL/foreign keys, initial Alembic setup. | 002 | Completed |
 | TASK-005 — Local Qdrant service | Docker Compose Qdrant, connection adapter, dependency diagnostic. | 001,002 | Planned |
 | TASK-006 — Ollama provider adapters | Embed/generate interfaces, Nomic and Qwen local adapters, model/dimension checks. | 002 | Planned |
 

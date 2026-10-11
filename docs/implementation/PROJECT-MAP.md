@@ -1,11 +1,14 @@
 # Project Map — Actual Codebase Inventory
 
-**Status:** TASK-003 completed. TASK-001 combined scaffold manual smoke check remains pending.
+**Status:** TASK-004 completed. TASK-001 combined scaffold manual smoke check remains pending.
 
 ## Root layout
 
-- `backend/pyproject.toml`, `backend/uv.lock` — Python 3.11+ package; uv-managed, locked FastAPI/Uvicorn dependencies.
+- `backend/pyproject.toml`, `backend/uv.lock` — Python 3.11+ package; uv-managed, locked FastAPI/Uvicorn and SQLAlchemy/Alembic dependencies.
 - `backend/app/__init__.py`, `backend/app/main.py` — backend package and minimal ASGI entry point.
+- `backend/app/config/settings.py` — `Settings`, `load_settings`, `BACKEND_ROOT`; `RAG_DATABASE_PATH` accepts local file paths, defaults to `backend/data/rag.sqlite3`, and resolves relative paths from `backend/`. Environment variables must be exported explicitly.
+- `backend/app/infrastructure/database.py` — shared `engine`, `SessionLocal`, `Base.metadata`, and scoped `get_db_session`; file-backed SQLite with foreign keys, WAL and 5000 ms busy timeout. Callers own short transaction boundaries; sessions close on dependency exit.
+- `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/alembic/versions/0001_initial.py` — shared engine/metadata and empty baseline `0001`; no product tables. Run `make migrate` from repository root or `uv run --locked alembic upgrade head` from `backend/`. Migrations are explicit, never API startup actions.
 - `frontend/package.json`, `frontend/package-lock.json`, `frontend/tsconfig.json`, `frontend/index.html` — React/TypeScript/Vite setup and dependency lock.
 - `frontend/src/main.tsx`, `frontend/src/App.tsx`, `frontend/src/style.css` — responsive application shell with local Documents, Chat and Diagnostics navigation.
 - `frontend/src/config.ts`, `frontend/.env.example` — `getApiBaseUrl` validates loopback-only Vite API configuration; development default, explicit production configuration.

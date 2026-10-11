@@ -27,8 +27,9 @@ build/
 *.db
 *.db-*
 *.sqlite
+*.sqlite-*
 *.sqlite3
 *.sqlite3-*
-/data/
+data/
 /uploads/
 /qdrant_storage/
