@@ -4,13 +4,13 @@
 
 ## Root layout
 
-- `backend/pyproject.toml`, `backend/uv.lock` — Python 3.11+ package; uv-managed, locked FastAPI/Uvicorn, SQLAlchemy/Alembic qdrant-client and HTTPX dependencies.
+- `backend/pyproject.toml`, `backend/uv.lock` — Python 3.11+ package; uv-managed, locked FastAPI/Uvicorn, SQLAlchemy/Alembic qdrant-client, HTTPX and python-dotenv dependencies.
 - `backend/app/__init__.py`, `backend/app/main.py` — backend package and minimal ASGI entry point.
-- `backend/app/config/settings.py` — `Settings`, `load_settings`, `BACKEND_ROOT`; `RAG_DATABASE_PATH` accepts local file paths, defaults to `backend/data/rag.sqlite3`, and resolves relative paths from `backend/`. Environment variables must be exported explicitly.
+- `backend/app/config/settings.py` — `Settings`, `load_settings`, `BACKEND_ROOT`; `RAG_DATABASE_PATH` accepts local file paths, defaults to `backend/data/rag.sqlite3`, and resolves relative paths from `backend/`. Loads root `.env` with exported environment variables taking precedence; omitted values use validated defaults.
 - `backend/app/infrastructure/database.py` — shared `engine`, `SessionLocal`, `Base.metadata`, and scoped `get_db_session`; file-backed SQLite with foreign keys, WAL and 5000 ms busy timeout. Callers own short transaction boundaries; sessions close on dependency exit.
 - `backend/app/infrastructure/qdrant.py` — `QdrantConnection`, `QdrantUnavailable`, `get_qdrant_connection`; request-scoped async HTTP client, bounded server-info connectivity probe, typed 503 failure and guaranteed close. No startup probe or vector operations.
 - `backend/app/infrastructure/ollama.py` — `OllamaConnection`, `OllamaError`, `GenerationOptions`, `get_ollama_connection`; closable async model discovery/validation, Nomic document/query prefixes, non-truncating finite embeddings with observed `embedding_dimension`, bounded non-streaming generation with thinking disabled, typed failures. No startup calls or automatic downloads.
-- `backend/app/config/settings.py` — exported `OLLAMA_BASE_URL` (loopback HTTP(S)), `OLLAMA_TIMEOUT_SECONDS` (1–300, default 120), `OLLAMA_EMBED_MODEL` and `OLLAMA_GENERATION_MODEL`; defaults use installed Nomic/Qwen3 tags.
+- `backend/app/config/settings.py` — root `.env` or exported `OLLAMA_BASE_URL` (loopback HTTP(S)), `OLLAMA_TIMEOUT_SECONDS` (1–300, default 120), `OLLAMA_EMBED_MODEL` and `OLLAMA_GENERATION_MODEL`; defaults use installed Nomic/Qwen3 tags.
 - `docker/compose.yml` — single Qdrant service, configurable `QDRANT_IMAGE_TAG` default v1.15.5, loopback-only HTTP 6333 and persistent named volume. Makefile provides `qdrant-start`, `qdrant-stop`, `qdrant-status`.
 - `backend/app/config/settings.py` — optional exported `QDRANT_URL` (loopback HTTP(S), default `http://127.0.0.1:6333`) and `QDRANT_TIMEOUT_SECONDS` (1–60, default 3).
 - `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/alembic/versions/0001_initial.py` — shared engine/metadata and empty baseline `0001`; no product tables. Run `make migrate` from repository root or `uv run --locked alembic upgrade head` from `backend/`. Migrations are explicit, never API startup actions.

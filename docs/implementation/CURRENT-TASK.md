@@ -71,3 +71,8 @@
 - Initial tiny generation returned empty text and correctly raised invalid_model_response. After disabling thinking for this bounded text adapter, the generation retry returned nonempty text. Live diagnostics reported Ollama healthy and both models available. Output quality/instruction-following was not evaluated.
 - Scoped git diff --check passed. No automated tests were added or run.
 - TASK-001 combined backend/frontend smoke and TASK-005 Docker Compose/live-Qdrant checks remain pending; neither was performed in TASK-006. No blockers.
+
+## Configuration follow-up
+
+- Root `.env` is now loaded via python-dotenv, independently of working directory, with exported environment variables taking precedence and existing defaults as fallbacks. No process environment mutation or interpolation is performed. README and environment example updated.
+- Follow-up checks passed: compile/import, root `.env` loading, environment precedence, invalid URL rejection, package metadata, lockfile and dependency compatibility, and scoped diff whitespace checks. Created ignored root `.env` from the example because no local file existed.

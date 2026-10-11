@@ -19,7 +19,9 @@ The backend provides `/health/live`, `/health/ready`, and `/api/v1/system/depend
 Use `make build-frontend` to type-check and produce `frontend/dist/`.
 Run `make help` for available commands.
 
-The backend reads explicitly exported environment variables, without loading `.env`.
+The backend loads the repository-root `.env` file, regardless of working directory.
+Copy `.env.example` to `.env` and set your local values. Exported environment
+variables take precedence; validated defaults apply to omitted settings.
 SQLite storage is configured by `RAG_DATABASE_PATH` (default `data/rag.sqlite3`,
 relative to `backend/`); run `make migrate` to apply its schema.
 Document ingestion and chat remain future tasks.
@@ -69,10 +71,10 @@ and frontend debug configurations are also available. Stop existing dev servers
 before debugging to free ports 8000 and 5173. Stopping the compound ends both
 debug sessions; use **Tasks: Terminate Task** to stop the frontend Vite task.
 
-Local Ollama is optional at startup. Export `OLLAMA_BASE_URL` (loopback HTTP(S),
+Local Ollama is optional at startup. Set `OLLAMA_BASE_URL` in root `.env` (loopback HTTP(S),
 default `http://127.0.0.1:11434`), `OLLAMA_TIMEOUT_SECONDS` (1–300, default 120),
 `OLLAMA_EMBED_MODEL` (default `nomic-embed-text:latest`) and
-`OLLAMA_GENERATION_MODEL` (default `qwen3:4b`) to override configuration.
+`OLLAMA_GENERATION_MODEL` (default `qwen3:4b`) to configure your local service and models.
 Models are never downloaded automatically. Manual adapter smoke command:
 
 ```sh

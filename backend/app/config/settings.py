@@ -1,4 +1,4 @@
-"""Validated local configuration; no .env file is loaded implicitly.
+"""Validated local configuration from root .env and environment overrides.
 
 RAG_HOST defaults to 127.0.0.1; RAG_PORT to 8000; RAG_ENVIRONMENT to
 development (or production). RAG_CORS_ORIGINS is a comma-separated list
@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
+from dotenv import dotenv_values
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -92,10 +93,12 @@ class Settings(BaseModel):
 
 
 def load_settings() -> Settings:
-    values = {key: os.environ[f"RAG_{key.upper()}"] for key in ("host", "port", "environment", "database_path") if f"RAG_{key.upper()}" in os.environ}
-    if "RAG_CORS_ORIGINS" in os.environ:
-        values["cors_origins"] = os.environ["RAG_CORS_ORIGINS"].split(",")
+    # Fixed repository path, independent of cwd; do not mutate process environment.
+    environment = {**dotenv_values(BACKEND_ROOT.parent / ".env", interpolate=False), **os.environ}
+    values = {key: environment[f"RAG_{key.upper()}"] for key in ("host", "port", "environment", "database_path") if f"RAG_{key.upper()}" in environment}
+    if "RAG_CORS_ORIGINS" in environment:
+        values["cors_origins"] = environment["RAG_CORS_ORIGINS"].split(",")
     for key in ("qdrant_url", "qdrant_timeout_seconds", "ollama_base_url", "ollama_timeout_seconds", "ollama_embed_model", "ollama_generation_model"):
-        if key.upper() in os.environ:
-            values[key] = os.environ[key.upper()]
+        if key.upper() in environment:
+            values[key] = environment[key.upper()]
     return Settings.model_validate(values)
