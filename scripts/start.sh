@@ -19,7 +19,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-# Launch the service processes directly so cleanup targets the actual servers.
+# Use the uv-managed environment and launch the service processes directly so cleanup targets the actual servers.
 (cd backend && exec .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000) &
 backend_pid=$!
 (cd frontend && exec node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173 --strictPort) &

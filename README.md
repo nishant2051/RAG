@@ -2,7 +2,9 @@
 
 A local, single-user RAG application scaffold. Product features are not implemented yet.
 
-Requires Python 3.11+ (including venv/pip), Node.js 22.12+ and npm, and Make.
+Requires uv, Python 3.11+, Node.js 22.12+ and npm, and Make.
+Backend dependencies are locked in `backend/uv.lock`. `uv sync --locked` creates
+`backend/.venv`, which the startup script and VS Code debugger use.
 The Makefile uses macOS/Linux virtual environment paths.
 
 From the repository root:

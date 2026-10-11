@@ -8,9 +8,16 @@
       "python": "${workspaceFolder}/backend/.venv/bin/python",
       "module": "uvicorn",
       "cwd": "${workspaceFolder}/backend",
-      "args": ["app.main:app", "--host", "127.0.0.1", "--port", "8000"],
+      "args": [
+        "app.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "preLaunchTask": "Sync backend (uv)"
     },
     {
       "name": "Frontend: Chrome",
@@ -24,7 +31,10 @@
   "compounds": [
     {
       "name": "Debug backend + frontend",
-      "configurations": ["Backend: FastAPI", "Frontend: Chrome"],
+      "configurations": [
+        "Backend: FastAPI",
+        "Frontend: Chrome"
+      ],
       "stopAll": true
     }
   ]

@@ -10,14 +10,13 @@ help:
 setup: setup-backend setup-frontend
 
 setup-backend:
-	python3 -m venv backend/.venv
-	backend/.venv/bin/python -m pip install -e ./backend
+	cd backend && uv sync --locked
 
 setup-frontend:
 	cd frontend && npm install
 
 dev-backend:
-	cd backend && .venv/bin/python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+	cd backend && uv run --locked uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 dev-frontend:
 	cd frontend && npm run dev -- --port 5173 --strictPort

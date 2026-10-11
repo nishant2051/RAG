@@ -2,15 +2,39 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Sync backend (uv)",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "sync",
+        "--locked"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Start frontend",
       "type": "shell",
       "command": "npm",
-      "args": ["run", "dev", "--", "--port", "5173", "--strictPort"],
-      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "args": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
       "isBackground": true,
       "problemMatcher": {
         "owner": "vite",
-        "pattern": { "regexp": "^(?!)$" },
+        "pattern": {
+          "regexp": "^(?!)$"
+        },
         "background": {
           "activeOnStart": true,
           "beginsPattern": "VITE.*",
