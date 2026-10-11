@@ -1,81 +1,63 @@
-# TASK-002 — FastAPI Entrypoint, Health, and Error Contracts
+# TASK-003 — React Application Shell
 
-**Milestone:** M1 Foundation
-**Depends on:** TASK-001 (`1879792`, reported complete; manual scaffold smoke check pending)
-**Status:** Complete; TASK-002 installation, compile/import and loopback HTTP smoke checks passed. TASK-001 combined scaffold smoke check remains pending.
+**Milestone:** M1 — Foundation
+**Depends on:** TASK-001 (`1879792`, reported complete) and existing FastAPI foundation TASK-002 (`e322247`, reported complete)
+**Status:** Complete — TypeScript/build, browser navigation and keyboard focus, development default and invalid remote URL checks passed. No automated tests added.
+**Manual follow-up:** TASK-001 combined scaffold smoke check is still pending. Do not mark it passed unless actually performed.
 
 ## Objective
-Implement a minimal local-only FastAPI application with typed configuration, health endpoints, and consistent JSON errors. Do not integrate SQLite, Qdrant, Ollama, ingestion, or chat yet.
 
-## Required context
-1. Root `AGENTS.md`.
-2. This `docs/implementation/CURRENT-TASK.md`.
-3. Only backend scaffold files necessary to establish existing packaging, dependencies, app entry point, settings, and Makefile targets; relevant `PROJECT-MAP.md` entries only if necessary.
+Turn the existing React + TypeScript + Vite scaffold into a small, usable **application shell** with minimal navigation, a typed frontend API configuration, and clear placeholders for future RAG features. Keep all implementation local-first, lightweight, and scoped to the frontend. Do **not** implement document upload, chat, API integration, or visual polish in this task.
 
-Do **not** read `docs/reference/`, the full implementation plan, prior tasks, or unrelated frontend files. Paths below are *suggested*, not assertions that they already exist. Adapt to actual TASK-001 scaffold layout rather than duplicating modules.
+## Required context and discovery budget
 
-## Repository hygiene prerequisite
-- Check `git status --short` and the relevant `.gitignore` rules without printing unrelated history.
-- Ensure `AGENTS.md` and `docs/implementation/{CURRENT-TASK.md,PROJECT-MAP.md,IMPLEMENTATION-PLAN.md}` can be tracked. If blanket `docs/` ignores them, narrowly adjust `.gitignore` to unignore only `docs/implementation/` and keep `docs/reference/` ignored as intended. Do not force-add files blindly or commit reference documents.
-- If this conflicts with the user's deliberate repository policy, stop and report it. Do not discard untracked files.
-- Check that TASK-001's pending manual smoke check is documented; do not claim it passed unless actually performed.
+1. Follow the root `AGENTS.md` and this file (`docs/implementation/CURRENT-TASK.md`).
+2. Inspect only the relevant `PROJECT-MAP.md` frontend section, `frontend/package.json`, Vite config, `src/main.*`, `src/App.*`, existing styles, and any existing frontend configuration file. Confirm actual paths before changing them; the examples below are **proposed**, not verified against your local repository.
+3. Check root `.env.example` and the existing FastAPI base path only if needed for URL naming; do not read backend feature modules.
+4. Do not read `docs/reference/`, completed tasks, the full implementation plan, or unrelated backend files.
+5. If the scaffold differs significantly from these assumptions, adapt only within the current frontend scope; stop and report if substantial redesign is necessary.
 
-## Suggested files (inspect before creating)
-- `backend/app/main.py` — FastAPI application factory or app instance.
-- `backend/app/config/settings.py` — typed environment-based settings.
-- `backend/app/api/health.py` — liveness, readiness, diagnostics routes.
-- `backend/app/api/errors.py` — typed app errors and exception handlers.
-- `backend/pyproject.toml` — dependencies, only if needed.
-- `.env.example` and `Makefile` — update only for app entry-point/config correctness.
-- `docs/implementation/PROJECT-MAP.md` — actual entry points, only after verification.
+## Suggested file changes (use actual matching paths)
 
-## Required behavior
-1. App serves locally (`127.0.0.1` by default). No credentials or cloud services required.
-2. Implement validated settings for host, port, app environment, and allowed local CORS origins. Reject malformed settings with clear startup errors; no secrets committed.
-3. `GET /health/live` returns `200` with a concise structured `alive` response whenever the process is running.
-4. `GET /health/ready` reports basic API readiness. External dependency checks are **not** implemented here; reserve an explicit, non-misleading status field (e.g. `dependencies: not_checked`) instead of claiming Qdrant/Ollama healthy.
-5. `GET /api/v1/system/dependencies` exposes dependency check status as `not_configured` or `not_checked` for SQLite/Qdrant/Ollama, without performing integrations prematurely. Exact payload may be simple and documented in code.
-6. Add typed application errors mapped to resource-shaped standardized JSON:
-   `{"error":{"code":"...","message":"...","details":{},"request_id":"..."}}`.
-   Sanitize unexpected server errors; never return tracebacks in HTTP responses.
-7. Generate/validate `X-Request-ID` (reasonable length/character bounds), include it in HTTP responses and error envelopes. Log concise request IDs rather than request bodies.
-8. Enable CORS only for configured localhost development origins and sensible trusted hosts. No authentication at this stage.
-9. Let FastAPI expose its generated OpenAPI documentation. Do not generate TypeScript clients in this task.
+- `frontend/src/App.tsx`: shell layout and minimal navigation.
+- `frontend/src/App.css` or existing stylesheet: basic responsive styling.
+- `frontend/src/index.css`: lightweight global defaults if already present.
+- `frontend/src/config.ts` (new if useful): validated API base URL accessor.
+- `frontend/.env.example` (new if needed): example `VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1`.
+- `frontend/README.md` or root `README.md`: only if a short clarification is needed for frontend startup/configuration.
+- `docs/implementation/PROJECT-MAP.md`: update implemented frontend entry points after confirming actual files.
+- `docs/implementation/IMPLEMENTATION-PLAN.md`: mark TASK-003 completed *only after required checks pass*.
 
-## Out of scope
-- No SQLite engine/migrations or persistence models (TASK-004).
-- No Qdrant, Docker configuration, or dependency probing (TASK-005).
-- No Ollama/model adapters (TASK-006).
-- No frontend changes unless needed to fix a direct scaffold blocker.
-- No automated tests, test framework, fixtures, mocks, or test files.
-- No unrelated refactoring or future endpoint implementations.
+Avoid creating unrelated files, new libraries, icon kits, design systems, or empty feature modules.
 
-## Verification (no automated tests)
-- Backend package installation/metadata and Python compile/import checks.
-- Launch FastAPI on loopback; manually request `/health/live`, `/health/ready`, `/api/v1/system/dependencies`, and `/openapi.json`, and inspect expected status/content.
-- Manually trigger one known application error path if practical and check standardized error plus `X-Request-ID`.
-- `git diff --check` and a brief `git status --short` review.
-- If manual server checks cannot be performed, report exactly which checks remain pending; do not report a full pass.
+## Functional requirements
 
-## Done when
-- Backend starts locally without Qdrant or Ollama.
-- Endpoints, typed settings, structured error handling, and request IDs function as specified.
-- Only necessary files changed; `PROJECT-MAP.md` updated with **verified** actual symbols/paths.
-- Repository tracking policy checked and resolved or reported as a blocker.
-- After checks pass, make one focused commit excluding unrelated work; leave incomplete/blocking changes uncommitted.
+1. Display a clear app title (e.g. **Local RAG**) and minimal persistent navigation with three destinations: **Documents**, **Chat**, and **Diagnostics**.
+2. The Documents view presents a short *Coming later* description for document upload/library (TASK-014 and later); Chat similarly indicates questions and answers are not yet implemented; Diagnostics indicates future retrieval inspection. These are placeholders, not simulated working features.
+3. Use simple local React state to switch views. Do not add React Router, state-management packages, or component libraries unless they were already installed in TASK-001. Do not create a fake backend or fake document data.
+4. Provide a responsive, keyboard-accessible layout: semantic landmarks, labeled navigation controls, visible keyboard focus, and clear selected view state. A minimal functional style is enough; premium Stitch-based design is deferred.
+5. Centralize the frontend API base URL via Vite environment configuration. Default to `http://127.0.0.1:8000/api/v1` only for local development. Validate that configured URLs are well formed and use loopback hosts for the initial local-only app; fail clearly on invalid config rather than silently using a remote service. Do not make network calls in this task.
+6. Preserve the existing TypeScript/Vite startup and build behavior. Keep the implementation simple and easy to replace when actual API-connected views arrive.
+7. Do not change FastAPI, database, Docker, Ollama, or Qdrant code.
 
-## Completion response (brief)
-- Status + commit hash
-- Files changed
-- Verification passed/pending
-- Blockers/deviations, if any
+## Explicit exclusions
 
-**Stop after TASK-002. Do not begin TASK-003.**
+- No upload forms, ingest-progress polling, document listing, chat sessions, SSE, model-selection settings, or API fetches.
+- No complex routing, authentication, design frameworks, production deployment, or speculative abstractions.
+- **No automated tests**, test framework configuration, mocks, fixtures, or test scripts added.
+- No reference-document scanning or work on TASK-004.
 
-## TASK-002 verification record
+## Lightweight verification (no automated tests)
 
-- Locked backend installation, package metadata, compile/import checks passed.
-- Loopback HTTP checks passed for liveness, readiness, dependency placeholders and OpenAPI; invalid host exercised `AppError`, and unknown route returned the standard 404 envelope. Valid request ID echoed; malformed ID replaced.
-- Local CORS and malformed settings manually checked; no automated tests created.
-- Git tracking rules narrowed for the three implementation records; reference docs remain ignored. Existing user edits were preserved and excluded from the commit.
-- TASK-001 combined backend/frontend scaffold smoke check remains pending; TASK-002 does not claim it passed.
+- Run the frontend's existing TypeScript check and production build (`npm run build` and any existing typecheck script). Do not add new test scripts.
+- Start the Vite dev server locally and manually verify that the app loads, the three views switch, keyboard navigation/focus is apparent, and there are no visible runtime errors. If unable to run a browser, say which checks remain pending.
+- Inspect local API URL configuration behavior (valid default + clear invalid-config failure) without implementing an automated test.
+- Run `git diff --check`, review short Git status, and avoid staging unrelated changes.
+- If practical, also close TASK-001's pending combined scaffold smoke check by starting the *existing* backend and frontend using documented commands. Report separately; don't expand TASK-003 to fix unrelated backend problems.
+
+## Handoff and completion
+
+- Update `PROJECT-MAP.md` only with actual implemented frontend modules/entry points. Mark TASK-003 completed in the roadmap if present; do not edit historical tasks.
+- Make a single focused Git commit on the current branch **after** required task checks pass, excluding unrelated changes. If blocked, do not commit and report the blocker.
+- Final response: task status + commit; files changed; checks passed/pending; blockers or deviations. Keep it to approximately four lines.
+- **Stop after TASK-003. Do not start TASK-004.**

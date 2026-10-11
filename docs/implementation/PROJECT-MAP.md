@@ -1,13 +1,14 @@
 # Project Map — Actual Codebase Inventory
 
-**Status:** TASK-002 completed. TASK-001 combined scaffold manual smoke check remains pending.
+**Status:** TASK-003 completed. TASK-001 combined scaffold manual smoke check remains pending.
 
 ## Root layout
 
 - `backend/pyproject.toml`, `backend/uv.lock` — Python 3.11+ package; uv-managed, locked FastAPI/Uvicorn dependencies.
 - `backend/app/__init__.py`, `backend/app/main.py` — backend package and minimal ASGI entry point.
 - `frontend/package.json`, `frontend/package-lock.json`, `frontend/tsconfig.json`, `frontend/index.html` — React/TypeScript/Vite setup and dependency lock.
-- `frontend/src/main.tsx`, `frontend/src/style.css` — minimal scaffold page.
+- `frontend/src/main.tsx`, `frontend/src/App.tsx`, `frontend/src/style.css` — responsive application shell with local Documents, Chat and Diagnostics navigation.
+- `frontend/src/config.ts`, `frontend/.env.example` — `getApiBaseUrl` validates loopback-only Vite API configuration; development default, explicit production configuration.
 - `docs/implementation/` — tracked task/progress records; reference documentation remains ignored.
 - `AGENTS.md` — existing repository instructions.
 - `Makefile`, `.env.example`, `.gitignore`, `README.md` — local-development entry points.
@@ -25,7 +26,7 @@
 
 ## Implemented modules / exported interfaces
 
-`backend/app/main.py` exports `app` and `create_app`; `python -m app.main` and `make dev-backend` bind using validated `RAG_*` settings from `config/settings.py` (`Settings`, `load_settings`). `api/health.py` exports `router` for liveness, readiness and unconfigured dependency status; `api/errors.py` provides `AppError`, `error_response`, and `register_error_handlers`. Request IDs, local host/CORS restrictions, JSON errors and generated OpenAPI documentation are implemented. `frontend/src/main.tsx` renders the scaffold page; no product interfaces or integrations exist yet.
+`backend/app/main.py` exports `app` and `create_app`; `python -m app.main` and `make dev-backend` bind using validated `RAG_*` settings from `config/settings.py` (`Settings`, `load_settings`). `api/health.py` exports `router` for liveness, readiness and unconfigured dependency status; `api/errors.py` provides `AppError`, `error_response`, and `register_error_handlers`. Request IDs, local host/CORS restrictions, JSON errors and generated OpenAPI documentation are implemented. `frontend/src/main.tsx` renders `App` from `frontend/src/App.tsx`; three accessible placeholder views use local React state. `frontend/src/config.ts` exports `getApiBaseUrl`; invalid configuration is displayed in the shell. No API calls or feature integrations exist yet.
 
 ## Task authoring notes
 

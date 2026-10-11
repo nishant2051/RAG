@@ -5,5 +5,15 @@
 }
 
 body { margin: 0; }
-main { max-width: 48rem; margin: 5rem auto; padding: 0 1.5rem; }
+* { box-sizing: border-box; }
+.shell { max-width: 60rem; margin: 0 auto; padding: 1.5rem; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; border-bottom: 1px solid #b5c0cd; padding-bottom: 1rem; }
+h1 { margin: 0; font-size: 1.75rem; }
+nav { display: flex; flex-wrap: wrap; gap: .5rem; }
+button { font: inherit; color: inherit; background: white; border: 1px solid #7a899a; border-radius: .25rem; padding: .65rem 1rem; cursor: pointer; }
+button[aria-current="page"] { color: white; background: #244e77; border-color: #244e77; }
+:focus-visible { outline: 3px solid #9b4300; outline-offset: 3px; }
+main { padding: 1.5rem 0; }
+.skip-link { position: absolute; top: -5rem; background: white; padding: .75rem; color: #182533; }
+.skip-link:focus { top: .5rem; }
 p { line-height: 1.6; }
