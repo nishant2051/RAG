@@ -16,7 +16,7 @@ setup-frontend:
 	cd frontend && npm install
 
 dev-backend:
-	cd backend && uv run --locked uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+	cd backend && uv run --locked python -m app.main
 
 dev-frontend:
 	cd frontend && npm run dev -- --port 5173 --strictPort

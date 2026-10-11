@@ -1,6 +1,11 @@
 .DS_Store
-# Documentation is maintained locally.
-/docs/
+# Reference documentation remains local; implementation handoffs are tracked.
+/docs/*
+!/docs/implementation/
+/docs/implementation/*
+!/docs/implementation/CURRENT-TASK.md
+!/docs/implementation/PROJECT-MAP.md
+!/docs/implementation/IMPLEMENTATION-PLAN.md
 # Local environments and secrets
 .env
 .env.*
