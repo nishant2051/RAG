@@ -23,7 +23,7 @@
         "dev",
         "--",
         "--port",
-        "5173",
+        "5174",
         "--strictPort"
       ],
       "options": {
@@ -38,7 +38,7 @@
         "background": {
           "activeOnStart": true,
           "beginsPattern": "VITE.*",
-          "endsPattern": "Local:.*http://127\\.0\\.0\\.1:5173/"
+          "endsPattern": "Local:.*http://127\\.0\\.0\\.1:5174/"
         }
       }
     }

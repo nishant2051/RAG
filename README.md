@@ -14,8 +14,8 @@ make setup
 make dev
 ```
 
-Backend: http://127.0.0.1:8000. Frontend: http://127.0.0.1:5173.
-The backend currently has no endpoints, so HTTP requests return 404.
+Backend: http://127.0.0.1:8000. Frontend: http://127.0.0.1:5174.
+The backend provides `/health/live`, `/health/ready`, and `/api/v1/system/dependencies` endpoints.
 Use `make build-frontend` to type-check and produce `frontend/dist/`.
 Run `make help` for available commands.
 

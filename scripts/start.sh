@@ -22,9 +22,9 @@ trap 'exit 143' TERM
 # Use the uv-managed environment and launch the service processes directly so cleanup targets the actual servers.
 (cd backend && exec .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000) &
 backend_pid=$!
-(cd frontend && exec node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173 --strictPort) &
+(cd frontend && exec node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5174 --strictPort) &
 frontend_pid=$!
-echo "Backend: http://127.0.0.1:8000 | Frontend: http://127.0.0.1:5173"
+echo "Backend: http://127.0.0.1:8000 | Frontend: http://127.0.0.1:5174"
 echo "Press Ctrl+C to stop both services."
 
 while kill -0 "$backend_pid" 2>/dev/null && kill -0 "$frontend_pid" 2>/dev/null; do
