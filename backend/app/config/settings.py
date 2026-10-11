@@ -19,11 +19,26 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseModel):
+    qdrant_url: str = "http://127.0.0.1:6333"
+    qdrant_timeout_seconds: int = Field(default=3, ge=1, le=60)
     database_path: Path = BACKEND_ROOT / "data" / "rag.sqlite3"
     host: str = "127.0.0.1"
     port: int = Field(default=8000, ge=1, le=65535)
     environment: Literal["development", "production"] = "development"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"])
+
+    @field_validator("qdrant_url")
+    @classmethod
+    def local_qdrant_url(cls, value: str) -> str:
+        parsed = urlsplit(value)
+        port = parsed.port
+        if (value != value.strip() or parsed.scheme not in {"http", "https"}
+            or parsed.hostname not in {"localhost", "127.0.0.1", "::1"}
+            or parsed.username is not None or parsed.password is not None
+            or parsed.path not in {"", "/"} or parsed.query or parsed.fragment
+            or (port is not None and not 1 <= port <= 65535)):
+            raise ValueError("qdrant_url must be a loopback HTTP(S) URL without credentials or paths")
+        return value.rstrip("/")
 
     @field_validator("database_path", mode="before")
     @classmethod
@@ -69,4 +84,7 @@ def load_settings() -> Settings:
     values = {key: os.environ[f"RAG_{key.upper()}"] for key in ("host", "port", "environment", "database_path") if f"RAG_{key.upper()}" in os.environ}
     if "RAG_CORS_ORIGINS" in os.environ:
         values["cors_origins"] = os.environ["RAG_CORS_ORIGINS"].split(",")
+    for key in ("qdrant_url", "qdrant_timeout_seconds"):
+        if key.upper() in os.environ:
+            values[key] = os.environ[key.upper()]
     return Settings.model_validate(values)

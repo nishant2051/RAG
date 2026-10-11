@@ -1,61 +1,82 @@
-# TASK-004 — SQLite, SQLAlchemy & Alembic Foundation
+# TASK-005 — Local Qdrant Service and Connection Adapter
 
 **Milestone:** M1 — Foundation
-**Depends on:** TASK-002 (`e322247`, reported complete). TASK-003 (`b89160d`) is also complete but does not need modification.
-**Status:** Complete — compile/import, validated path, disposable migration/repeat upgrade, SQLite pragma/session and backend liveness checks passed; no automated tests added.
-**Carryover:** TASK-001 combined backend/frontend smoke check remains pending; do not mark complete unless actually performed.
+**Status:** Complete — available lightweight checks passed; Docker verification pending (Docker CLI unavailable).
+**Depends on:** TASK-002 and TASK-004 (completed)
+**Goal:** Run Qdrant locally through Docker Compose and provide a small typed Python adapter to check connectivity. No collections, vectors, indexing, or retrieval yet.
 
-## Objective
+## Starting state (reported)
 
-Add the **persistence infrastructure only**: a local SQLite database engine and session factory, SQLite connection pragmas, shared SQLAlchemy declarative metadata, and an operational Alembic migration setup. Do not create application/domain tables yet. This task must not change the existing FastAPI health/error contracts or frontend shell.
+- FastAPI backend exists with typed settings, structured errors, and `/health/live`.
+- SQLite, SQLAlchemy, and Alembic foundation is complete (commit `0112df0`).
+- Frontend scaffold exists. Working tree reported clean.
+- TASK-001 combined backend/frontend smoke check remains pending; do not mark it complete unless actually performed.
 
-## Read scope and discovery budget
+## Context boundaries
 
-1. Follow root `AGENTS.md` and `docs/implementation/CURRENT-TASK.md` (this file).
-2. Read the **relevant backend section only** of `docs/implementation/PROJECT-MAP.md`; inspect actual `backend/pyproject.toml`, existing configuration/settings, backend package layout and entry point, existing `.env.example`, `.gitignore`, and Makefile targets as necessary.
-3. Examine Alembic or SQLAlchemy files *if already present* and adapt instead of creating parallel infrastructure.
-4. Do **not** read `docs/reference/`, prior tasks, the full implementation roadmap, or unrelated frontend code. Keep shell output bounded.
-5. Paths and names below are **suggested**, not verified against the developer's local checkout. Confirm actual locations before editing. If major restructuring is required, stop and report.
+- Follow repository `AGENTS.md`.
+- Read this file, relevant `PROJECT-MAP.md` entries, and only the files needed for settings, dependencies, health routing, Docker configuration, and development commands.
+- **Do not read** PRD, System Architecture, Database Design, API Specification, RAG Technical Design, completed tasks, or the full implementation plan.
+- The paths below are suggestions: inspect the existing repository structure first and adapt naming to actual conventions. Do not create duplicate settings, error or health modules.
 
-## Suggested changes (adjust to real structure)
+## Work to implement
 
-- `backend/pyproject.toml` — add only necessary compatible `SQLAlchemy` and `alembic` dependencies.
-- `backend/app/infrastructure/database.py` or `backend/app/infrastructure/database/{engine.py,base.py}` — synchronous SQLite engine, `sessionmaker`, shared declarative `Base`/metadata, and a scoped `get_db_session()` FastAPI dependency if useful. Prefer a small implementation over premature repository abstractions.
-- `backend/app/config/settings.py` — add a validated local SQLite path/database URL setting, preserving existing environment validation.
-- `backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/versions/<revision>_initial.py` — migration setup and one **empty baseline migration**. Avoid creating any product tables.
-- `.env.example`, `.gitignore`, Makefile/README — only minimal local configuration, data-directory ignore, migration commands, and startup instructions if needed.
-- `docs/implementation/PROJECT-MAP.md` — add *verified* exported persistence entry points and migration paths.
-- `docs/implementation/IMPLEMENTATION-PLAN.md` — mark TASK-004 complete after checks, preserving unrelated edits.
+1. **Local Qdrant service**
+   - Add or update a narrowly scoped Docker Compose configuration (for example `docker/compose.yml` or the repository's existing Compose file) with a single `qdrant/qdrant` service.
+   - Use an explicit, configurable image tag rather than `latest`, and document the chosen tag.
+   - Bind Qdrant HTTP port **6333** to `127.0.0.1` only. Expose gRPC port 6334 only if needed; otherwise omit it.
+   - Persist Qdrant data to a named volume or a project-owned data directory that is ignored by Git.
+   - Do not add Redis, PostgreSQL, authentication infrastructure, cloud services, or unrelated containers.
 
-## Required behavior
+2. **Typed configuration**
+   - Extend the existing backend settings with `QDRANT_URL` (default `http://127.0.0.1:6333`) and a reasonable, configurable request timeout.
+   - Update the example environment file and README with local startup/configuration instructions.
+   - Keep external-service configuration optional at application startup; FastAPI must still start when Qdrant is stopped.
 
-1. Use **SQLite with SQLAlchemy 2.x** and a single configured local database file (e.g. under an ignored `data/` directory); do not hardcode a developer-specific absolute path. Resolve relative paths predictably from a documented project/backend root and create the parent directory when appropriate. Do not permit an accidental production remote DB URL for this local-first task.
-2. Keep settings validated and consistent with TASK-002's configuration conventions. Missing optional settings should yield a usable local default; malformed configuration must fail with a clear error.
-3. Configure SQLite connections with `PRAGMA foreign_keys=ON`, a reasonable `busy_timeout` (e.g. 5000 ms), and WAL journal mode for file-backed SQLite. Account for WAL's file-backed requirement rather than assuming it works with `:memory:`. Keep transactions short; **do not** turn on broad autocommit or keep a session open across long-running calls.
-4. Expose a reusable engine/session factory and declarative metadata that subsequent document/chat tasks can import. Ensure per-operation sessions are closed or returned to the pool; do not store a mutable global Session instance.
-5. Configure Alembic to use the **same DB path/settings and shared metadata** as the application, with an initial empty revision. Migrations must be executable from a documented working directory/command. Do not automatically run schema migrations on every API startup.
-6. Migration should be repeatable: upgrading a fresh disposable database to head succeeds, and repeating the upgrade does not create duplicate objects. Keep migration code free of product entities and seed data.
-7. Preserve `/health/live`, `/health/ready`, `/api/v1/system/dependencies`, existing `X-Request-ID`, CORS, and error behavior. Database integration with readiness/diagnostics is **not** required in this task; do not misreport dependency health as checked.
-8. Protect local runtime data: ignore SQLite `.db`/`.sqlite` files, WAL/SHM sidecars, and local storage directories without ignoring Alembic scripts or project implementation docs.
+3. **Minimal Qdrant connection adapter**
+   - Add the `qdrant-client` dependency using the project's existing dependency-management style.
+   - Create a small infrastructure adapter that constructs/closes the client and performs a bounded connectivity/health probe. Prefer the client's available lightweight health/check operation or an appropriate documented HTTP health endpoint.
+   - Handle connection errors/timeouts as typed dependency-unavailable failures using existing error conventions; don't leak raw exception details through HTTP responses.
+   - Avoid creating collections, payload indexes, inserting test vectors, or defining the final vector-store interface in this task.
 
-## Exclusions
+4. **Health integration**
+   - If an existing readiness/dependency diagnostics route exists, add Qdrant status there without changing the published liveness semantics.
+   - Otherwise add only the smallest appropriate diagnostics integration within the current health-route conventions. Don't invent the full final health API prematurely.
+   - `/health/live` must remain available with Qdrant offline. A Qdrant failure should be reported as degraded/unavailable, not crash startup.
 
-- No `documents`, `content_objects`, `index_generations`, `chat_*`, job, or other domain tables; those are later tasks.
-- No Qdrant, Ollama, worker, ingestion, upload APIs, or frontend changes.
-- No test files, test frameworks, fixtures, mocks, or permanent verification scripts.
-- No broad refactoring, dependency upgrades unrelated to SQLAlchemy/Alembic, or speculative async/database repository layers.
+5. **Development commands and handoff**
+   - Add concise Makefile commands for Qdrant start/stop/status if consistent with existing conventions.
+   - Update `PROJECT-MAP.md` only with modules and interfaces actually implemented; update current task status in the normal local progress records.
 
-## Lightweight verification (no automated test cases)
+## Boundaries / non-goals
 
-1. Install/update only necessary backend dependencies. Run Python compile/import checks for settings, database infrastructure, and Alembic configuration.
-2. Using a **throwaway SQLite file/path**, run `alembic upgrade head`; verify the Alembic version table exists, and rerun to verify no-op behavior. Optionally inspect `alembic current`/`heads`. Do not use or overwrite a developer's existing database.
-3. Inspect SQLite pragmas through a brief manual Python/SQLite command to confirm `foreign_keys=1`, WAL mode on file-backed DB, and configured busy timeout. This is a one-off smoke check, **not** a committed automated test.
-4. If practical, launch the existing backend and manually check `/health/live` still responds. Report the pending TASK-001 combined scaffold smoke check separately; don't expand this task to fix unrelated frontend problems.
-5. Run `git diff --check`; inspect short Git status and preserve unrelated staged/unstaged work. Note that the TASK-003 plan row may have been updated outside its prior commit; preserve it.
+- No automated tests, test files, fixtures, mocks, or test frameworks.
+- No application-specific Qdrant collections, vector dimensions, embedding models, document schema, indexing, or retrieval logic. TASK-006 introduces Ollama integration.
+- No frontend changes, UI features, unrelated refactoring, or dependency upgrades.
+- Do not modify unrelated staged/untracked work. If an unexpected architectural dependency requires broad exploration, **stop and report the blocker**.
 
-## Completion and stopping conditions
+## Lightweight verification (without writing tests)
 
-- SQLite engine, session factory/Base, validated local config, and Alembic baseline are present and documented with actual paths.
-- Required lightweight checks pass or any unperformed manual checks are explicitly listed as pending.
-- Update only necessary `PROJECT-MAP.md` entries and the TASK-004 status row. Commit **only** verified TASK-004 files plus its intended handoff updates; do not stage unrelated changes. If blocked, report without committing.
-- Give a concise handoff: status/commit; files changed; checks passed/pending; blockers. **Stop after TASK-004. Do not start TASK-005.**
+- Run Python syntax/import checks and the existing dependency/metadata checks.
+- Validate Docker Compose configuration (`docker compose config`, using the correct compose path).
+- If Docker is available, bring Qdrant up and confirm the adapter reports healthy; stop Qdrant and confirm the API still starts and reports Qdrant unavailable through the chosen diagnostics route.
+- Verify `/health/live` works with Qdrant unavailable.
+- Run `git diff --check` on the scoped changes.
+- If Docker is unavailable, report the exact verification not performed; do not claim service connectivity was checked.
+- The combined TASK-001 smoke check remains pending unless independently completed.
+
+## Done when
+
+- A developer can start persistent, loopback-bound Qdrant locally through the documented command.
+- Backend configuration and the adapter can detect a healthy or unavailable Qdrant without crashing FastAPI.
+- No app collections or vector operations have been introduced.
+- Changes pass the available lightweight checks, and one **focused Git commit** is created only after prescribed verification succeeds. Preserve unrelated changes.
+- Return a brief handoff: commit hash, changed areas, checks run/skipped, blockers, and pending manual checks. **Stop after TASK-005.**
+
+## Verification handoff
+
+- Python compile/import and package metadata checks, `uv lock --check`, and `uv pip check` passed.
+- FastAPI started on loopback port 18005 (8000 already occupied). With Qdrant unavailable, `/health/live` returned 200/alive and dependency diagnostics returned 200 with `qdrant: unavailable`; readiness retained `dependencies: not_checked`. The smoke-check server was stopped afterward.
+- Makefile Qdrant command dry runs and scoped `git diff --check` passed.
+- Docker CLI is not installed: Compose configuration validation, container startup, healthy adapter connectivity, persistence across restart, and container stop/offline verification remain pending. No live Qdrant connectivity is claimed.
+- TASK-001 combined backend/frontend smoke check remains pending. No automated tests were added or run.

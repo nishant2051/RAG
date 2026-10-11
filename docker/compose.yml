@@ -1,0 +1,14 @@
+name: local-rag
+
+services:
+  qdrant:
+    image: qdrant/qdrant:${QDRANT_IMAGE_TAG:-v1.15.5}
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+
+volumes:
+  qdrant_data:

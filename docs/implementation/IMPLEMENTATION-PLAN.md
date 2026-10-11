@@ -35,7 +35,7 @@ Each task below is a brief roadmap entry, **not a Codex instruction file**. Prep
 | TASK-002 — FastAPI entrypoint and health | Minimal FastAPI app, typed configuration, live/ready response shells and standard errors. | 001 | Completed |
 | TASK-003 — React application shell | Vite UI shell, API base URL configuration and minimal navigation. | 001 | Completed |
 | TASK-004 — SQLite engine and migrations | SQLAlchemy sessions, SQLite WAL/foreign keys, initial Alembic setup. | 002 | Completed |
-| TASK-005 — Local Qdrant service | Docker Compose Qdrant, connection adapter, dependency diagnostic. | 001,002 | Planned |
+| TASK-005 — Local Qdrant service | Docker Compose Qdrant, connection adapter, dependency diagnostic. | 001,002 | Complete — available checks passed; Docker Compose/connectivity checks pending (Docker unavailable). |
 | TASK-006 — Ollama provider adapters | Embed/generate interfaces, Nomic and Qwen local adapters, model/dimension checks. | 002 | Planned |
 
 ### M2 — First working RAG
