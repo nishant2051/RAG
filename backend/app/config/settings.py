@@ -19,6 +19,10 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseModel):
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    ollama_timeout_seconds: int = Field(default=120, ge=1, le=300)
+    ollama_embed_model: str = "nomic-embed-text:latest"
+    ollama_generation_model: str = "qwen3:4b"
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_timeout_seconds: int = Field(default=3, ge=1, le=60)
     database_path: Path = BACKEND_ROOT / "data" / "rag.sqlite3"
@@ -27,7 +31,7 @@ class Settings(BaseModel):
     environment: Literal["development", "production"] = "development"
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"])
 
-    @field_validator("qdrant_url")
+    @field_validator("qdrant_url", "ollama_base_url")
     @classmethod
     def local_qdrant_url(cls, value: str) -> str:
         parsed = urlsplit(value)
@@ -37,8 +41,15 @@ class Settings(BaseModel):
             or parsed.username is not None or parsed.password is not None
             or parsed.path not in {"", "/"} or parsed.query or parsed.fragment
             or (port is not None and not 1 <= port <= 65535)):
-            raise ValueError("qdrant_url must be a loopback HTTP(S) URL without credentials or paths")
+            raise ValueError("service URL must be a loopback HTTP(S) URL without credentials or paths")
         return value.rstrip("/")
+
+    @field_validator("ollama_embed_model", "ollama_generation_model")
+    @classmethod
+    def model_tag(cls, value: str) -> str:
+        if not value or value != value.strip() or any(c.isspace() for c in value):
+            raise ValueError("model tag must be nonempty and contain no whitespace")
+        return value
 
     @field_validator("database_path", mode="before")
     @classmethod
@@ -84,7 +95,7 @@ def load_settings() -> Settings:
     values = {key: os.environ[f"RAG_{key.upper()}"] for key in ("host", "port", "environment", "database_path") if f"RAG_{key.upper()}" in os.environ}
     if "RAG_CORS_ORIGINS" in os.environ:
         values["cors_origins"] = os.environ["RAG_CORS_ORIGINS"].split(",")
-    for key in ("qdrant_url", "qdrant_timeout_seconds"):
+    for key in ("qdrant_url", "qdrant_timeout_seconds", "ollama_base_url", "ollama_timeout_seconds", "ollama_embed_model", "ollama_generation_model"):
         if key.upper() in os.environ:
             values[key] = os.environ[key.upper()]
     return Settings.model_validate(values)

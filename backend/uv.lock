@@ -237,6 +237,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "qdrant-client" },
     { name = "sqlalchemy" },
     { name = "uvicorn" },
@@ -246,6 +247,7 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.14,<2" },
     { name = "fastapi", specifier = ">=0.115,<1" },
+    { name = "httpx", specifier = ">=0.28,<0.29" },
     { name = "qdrant-client", specifier = ">=1.15,<1.16" },
     { name = "sqlalchemy", specifier = ">=2.0,<3" },
     { name = "uvicorn", specifier = ">=0.34,<1" },
