@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 class UploadResult(BaseModel):
     document_id: UUID
     job_id: None = None
-    status: Literal["stored_pending_indexing"]
+    status: Literal["stored_pending_indexing", "indexed"]
 
 
 @router.post("", status_code=202, response_model=UploadResult)

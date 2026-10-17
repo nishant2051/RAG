@@ -10,6 +10,7 @@ from starlette.middleware.cors import CORSMiddleware
 from app.api.errors import AppError, error_response, register_error_handlers
 from app.api.health import router
 from app.documents.router import router as documents_router
+from app.rag.router import router as rag_router
 from app.config.settings import Settings, load_settings
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_error_handlers(application)
     application.include_router(router)
     application.include_router(documents_router)
+    application.include_router(rag_router)
     application.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
                                allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["X-Request-ID", "Idempotency-Key", "Content-Type"],
                                expose_headers=["X-Request-ID"])
