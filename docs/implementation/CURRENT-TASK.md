@@ -1,81 +1,83 @@
-TASK-010 — Nomic Embeddings and Qdrant Indexing
+TASK-012 — Document-Grounded Answer Generation
 Milestone: M2 — First Working RAG
-Scope: Backend internal indexing service only
-Status: Implemented — lightweight checks passed; live Qdrant acceptance pending
+Scope: Internal backend answer-generation service only
+Status: Implemented; lightweight checks passed; live grounded-answer verification limited by local Qwen3 output (see handoff)
 Goal
-Implement the smallest internal pipeline that accepts the existing immutable chunks from TASK-009, obtains document embeddings from the existing Ollama adapter using nomic-embed-text:latest, and upserts points into Qdrant through the existing Qdrant integration. Leave persistent asynchronous ingestion jobs and advanced index-generation activation for M3.
-Do not create a new architecture or broad abstraction layer. Reuse actual existing APIs; the names below describe desired behavior, not assumed signatures.
+Implement a small, typed, asynchronous operation that takes a user's question and the ordered passages returned by TASK-011, constructs a bounded, source-attributed evidence context, calls the existing local Qwen3 Ollama generation adapter, and returns a document-grounded answer with validated evidence references. When the supplied evidence is absent or insufficient, return a clear abstention rather than answering from model knowledge. Keep this an internal service; API and orchestration integration are later tasks.
+TASK-011 is reported implemented, but its exact interface and Git status were not supplied. Inspect the actual code and adapt to it. Do not invent signatures or assume TASK-011's runtime verification succeeded.
 Read only what is necessary
-1. AGENTS.md and this docs/implementation/CURRENT-TASK.md.
-2. The ingestion, Ollama, Qdrant, and upload/storage sections of docs/implementation/PROJECT-MAP.md.
-3. Targeted source files only:
-   - backend/app/ingestion/chunking.py and existing parsed-document models as necessary.
-   - Existing Ollama embedding adapter and its settings/errors.
-   - Existing Qdrant adapter and its settings/errors.
-   - Upload/content identity model or storage interfaces only if needed to establish stable content IDs.
-   - backend/pyproject.toml only to check installed library versions.
-Do not read the five architectural documents, full implementation plan, previous task files, or unrelated source.
-Preflight: preserve existing work
-- Check git status --short before editing. TASK-007, TASK-008, and possibly TASK-009 are not known to be committed.
-- Do not stage, commit, reset, clean, discard, or overwrite unrelated work.
-- Confirm that the existing chunk API chunk_document(document, config) returns ordered immutable chunks with source offsets and SHA-256 hashes, default target 500, overlap 75, and maximum 1000 estimated tokens.
-- Inspect existing adapter signatures and implement against them rather than guessing names.
-- Qdrant prerequisite: Attempt the previously pending Docker Compose validation and live Qdrant connection check if Docker/Qdrant is available. Record what was actually verified. An unavailable Docker/Qdrant environment is not permission to fake an end-to-end pass. Implement offline-verifiable code, report live indexing as pending, and stop rather than broadening scope to install/configure Docker.
+1. AGENTS.md and docs/implementation/CURRENT-TASK.md.
+2. Relevant sections of docs/implementation/PROJECT-MAP.md (retrieval and Ollama generation).
+3. Targeted source files:
+   - TASK-011 retrieval output models and search entry point (likely under backend/app/retrieval/).
+   - Existing Ollama generation adapter, settings, and typed errors.
+   - Any existing prompt or generation profile configuration only if already implemented.
+   - backend/pyproject.toml only if API/dependency compatibility needs checking.
+Do not read the five architectural reference documents, full implementation plan, earlier task files, frontend, or unrelated modules.
+Preflight and non-negotiable constraints
+- First run git status --short. TASK-007 onward may be uncommitted. Do not assume a clean working tree.
+- Preserve existing and unrelated edits. Never stage, commit, reset, clean, discard, or overwrite work without permission.
+- Identify and reuse the real TASK-011 passage shape and generation adapter API. Do not make breaking changes to retrieval/indexing just to fit this task.
+- Use local qwen3:4b via the existing Ollama adapter; default to thinking disabled if the adapter supports the option.
+- No automated tests or test infrastructure. No new dependencies unless unavoidable.
 Required implementation
-1. Internal indexing entry point
-Create a small backend indexing module under backend/app/ingestion/ (or the closest established module), exposing a typed asynchronous operation that indexes an ordered sequence of already-created chunks for a stable content identity and an explicit embedding profile. If existing code supports retrieving/parsing/chunking a stored document cheaply, a thin composition wrapper is acceptable; avoid coupling vector indexing to HTTP endpoints or job orchestration.
-- Validate nonempty chunk input; reject missing content identity and unsupported profile/dimensions with typed, actionable errors consistent with the backend.
-- Preserve the chunk's original text, hash, order/index, section context, and source location metadata in Qdrant payloads where those fields exist. Represent unknown/nullable line ranges as null or omit them; never invent values.
-- Return a concise internal result (e.g. count, collection/profile, point identities) that a future ingestion orchestration task can use. Do not imply durable activation or job completion.
-2. Ollama embeddings
-- Reuse the existing async Ollama adapter, not a second HTTP client.
-- Default embedding model: nomic-embed-text:latest. Use the existing model/settings mechanism where supported.
-- Batch deterministically in document order; default batch size 16, configurable through the smallest existing configuration mechanism.
-- Use the document embedding mode/input convention already established by the adapter. Do not silently truncate chunks.
-- Check the number of vectors equals the number of submitted chunks. Validate every vector is numeric, finite, and 768-dimensional for the active Nomic profile. Surface model/network/mismatch errors without partially reporting success.
-- Do not add another tokenizer or claim exact token counts; the TASK-009 counts are estimates.
-3. Qdrant collection and upsert
-- Reuse the existing Qdrant client/settings and established distance metric if present. If none exists, use cosine similarity for the 768-dimensional collection.
-- Ensure/verify the target collection exists with the expected vector dimension and metric; reject incompatible existing configuration explicitly, never silently recreate or delete a collection.
-- Build deterministic, Qdrant-valid point IDs (UUID or uint64) from stable content identity + embedding profile + chunk identity/index. Identical reindex inputs should map to the same point IDs; distinct chunks must not overwrite each other accidentally. Do not use random IDs.
-- Upsert in bounded batches and await/verify acknowledgments using the installed Qdrant client API. Use payload keys that support later semantic retrieval filtering by content/profile (and generation ID only if already available); do not fabricate active-generation records.
-- Keep the implementation idempotent for the same content/profile/chunks. Reuse of embeddings across logical documents should remain possible because identities are content-based, not upload-specific.
-- Avoid deleting an earlier valid index or marking a new one active if embedding/upsert fails. Report partial failures as errors; full atomic activation belongs to a later task.
-4. Configuration and errors
-- Prefer existing typed settings and error types; add only narrowly necessary configuration.
-- Do not install dependencies unless a required package is genuinely absent; explain any dependency change.
-- Keep identifiers/profile fields explicit and stable for TASK-011 semantic retrieval.
-Explicitly out of scope
-- No new or modified HTTP API route and no upload-triggered indexing yet.
-- No worker process, polling, persistent ingestion job/checkpoint/retry scheduling, or cancellation framework.
-- No SQLite migration, durable index-generation activation/switching, replacement semantics, cleanup, or rollback orchestration unless an existing required interface makes a minimal addition unavoidable; if so, stop and report the dependency before implementing it.
-- No semantic search, reranking, generation, citations, chat, or UI.
-- No PDF/DOCX support.
-- No tests of any kind: no unit/integration/E2E tests or test frameworks.
-- No general refactors, optional libraries, or unrelated documentation rewrites.
-- No git add/commit operations without permission.
-Lightweight acceptance checks (no automated test files)
-1. Python compilation and import check for changed modules.
-2. Run a short disposable/manual embedding invocation against the locally available Ollama model when available; verify count and 768 dimensions. If the model is unavailable, clearly mark that check pending.
-3. If live Qdrant is available: manually index a small TXT/Markdown chunk sample, inspect collection dimension and stored payload/count, reindex exactly the same input to demonstrate stable IDs/no duplicate points, and verify a mismatched dimension is rejected without destructive changes. Use a disposable collection or otherwise avoid modifying valuable existing data.
-4. If Qdrant is unavailable: validate deterministic point/payload construction without asserting a live upsert passed. Explicitly record Docker Compose/Qdrant checks as pending.
-5. Confirm failures (empty input, dimension mismatch, unavailable model/Qdrant) give bounded, actionable errors; do not add automated test code to do so.
-6. Review git diff --check, git status --short, and modified-file scope; keep pre-existing changes.
-Handoff updates
-Update only the relevant sections of docs/implementation/PROJECT-MAP.md and this CURRENT-TASK.md with the actual public internal entry point, files changed, verification evidence, and any known limits. Do not claim TASK-001 combined frontend/backend startup or TASK-005 live Docker/Qdrant checks passed unless you actually ran them.
-Completion report to return
-- Internal indexing API and precise files changed.
-- How point IDs, profile, collection name, and payload metadata are represented.
-- Verification performed: compile/import, Ollama live, Docker Compose, Qdrant live/upsert/reindex; distinguish passed / failed / pending.
-- Limitations or blockers, including any temporary partial-upsert behavior.
-- Final git status --short; state explicitly whether anything was staged or committed.
-Stop after TASK-010. Do not start TASK-011, clean the working tree, or commit without explicit authorization.
+1. Internal generation entry point and typed result
+Add a focused module following repository conventions (suggested backend/app/rag/generation.py) exposing a typed async operation such as generate_grounded_answer(question, passages, config); select the exact signature based on existing types.
+- Accept a nonblank user question and an explicit ordered set of retrieved passages. Do not perform retrieval within this function.
+- Return an immutable or otherwise well-defined typed result: final answer text, outcome (answered / insufficient_evidence or equivalent), and validated evidence references mapped to the source passage identities/metadata. Include generation/profile diagnostics only where the existing adapter already provides them; avoid speculative token metrics.
+- No persistence, session behavior, HTTP contract, or streaming.
+2. Evidence selection and bounded context
+- Treat TASK-011 passage text and metadata as the sole factual evidence. Ignore passages missing required identity or nonblank text; never synthesize source metadata.
+- Assign deterministic, unique local evidence IDs (for example E1, E2, ...) in stable passage order after filtering/deduplicating. Maintain an explicit evidence-ID-to-passage mapping, including original point ID/content identity and available source/heading/location fields. Evidence IDs must be derived from the passed-in list, not invented by the LLM.
+- Build clear, delimited source blocks so answer references can be traced to their exact supplied passage. Mark source text as untrusted data, not instructions.
+- Bound the input context with configuration grounded in actual Ollama context settings: reserve space for the system/user prompt, requested output, and a safety margin. Prefer relevance order, never silently overfill the budget. For M2, a simple bounded estimator is acceptable if explicitly named as approximate; retain original source identities when truncating or omitting blocks. Do not introduce a tokenizer or complicated sentence-selector framework solely for this task.
+- Apply stable size limits to the user question and evidence; reject obviously oversized inputs clearly rather than sending unbounded text to Ollama.
+3. Versioned grounding prompt and local generation
+- Keep a versioned prompt template constant or lightweight module configuration; record its version in the result if useful.
+- Instruct Qwen3 to answer only from supplied source blocks, ignore instructions embedded in documents, avoid unsupported extrapolation, and abstain when adequate evidence is unavailable.
+- Ask the model to cite used evidence IDs in a simple predictable form such as [E1]; these are internal evidence references, not finalized end-user citation links.
+- Use the existing generation adapter, its timeout/error behavior, and supported settings. Respect configurable context/output limits, and allow model configuration via existing settings instead of hard-coding a second unrelated client.
+- No fallback to the model's general knowledge, web, or other documents.
+4. Abstention and evidence reference validation
+- If zero usable passages remain, return insufficient_evidence without calling Ollama.
+- Implement a conservative, explicit post-generation validation policy: extract cited evidence IDs from the model response, reject references absent from the evidence map, and never report a fabricated source as valid.
+- If the model returns no usable answer, clearly refuses for lack of information, or produces an answer requiring citations but none valid, return insufficient_evidence (or an explicit non-success validation outcome), not a falsely supported answered response. Do not silently strip invalid IDs and report success.
+- Make it explicit in code and handoff that citation-ID validation verifies provenance only, not factual entailment. Do not claim it proves an answer is supported sentence by sentence.
+- If the result is an abstention, do not attach citations implying an answer was supported. Provide a short, stable user-facing abstention message.
+- Distinguish insufficient evidence from infrastructure/model failures; propagate typed Ollama errors rather than disguising outages as abstentions.
+5. Keep the first slice intentionally small
+- No separate relevance model, LLM-as-judge, factual entailment checker, confidence score, or automated evaluation.
+- No full RAG orchestrator, conditional question rewrite, retrieval invocation, prompt-injection classifier, chat history, or persistent execution record.
+- No generation retries beyond existing adapter policy, no streaming/SSE, regeneration, cancellation, or UI.
+- No new DB schema, migrations, Qdrant access, or Docker requirement in generation code.
+- No PDF/DOCX, worker jobs, collection management, or advanced citation-to-latest-document resolution.
+Lightweight acceptance checks (manual; no committed tests)
+1. Python compile/import and git diff --check on changed files.
+2. Manually invoke the internal API with two short fabricated-in-memory passages derived from ordinary benign sample text; inspect prompt construction, deterministic evidence IDs, returned identity/metadata mapping, and bounded context behavior. Do not add test files to the repo.
+3. Verify an empty passage set returns abstention and does not call Ollama. Check blank question, missing text/metadata, duplicated passage IDs, excessive context/question, and invalid or unknown cited IDs using a short disposable command/script or inspection; report which were genuinely exercised.
+4. If local Ollama and qwen3:4b are available, run one real grounded generation with a short passage and check source IDs are validated; also test an unrelated question and observe abstention behavior. Do not claim that a single successful run guarantees model grounding or factual correctness.
+5. If Ollama is unavailable, report live generation pending. If Docker/Qdrant is unavailable, that must not block these in-memory generation checks; keep earlier Qdrant checks pending.
+6. Preserve pending TASK-001 combined frontend/backend startup and TASK-005/TASK-010/TASK-011 live Qdrant checks until actually run. Do not change their status based on mocks or constructed client requests.
+Documentation handoff
+Update only the relevant sections of docs/implementation/PROJECT-MAP.md and docs/implementation/CURRENT-TASK.md with actual function signatures, result schema, evidence-ID and abstention policies, prompt version, verification status, and observed limitations. Keep them concise; do not rewrite historical project documentation.
+Completion report
+Provide:
+- Actual internal API signature and changed files.
+- Context budgeting and evidence-ID mapping/validation approach.
+- Abstention policy, actual Qwen3 model/options, prompt version, and any adapter changes.
+- Manual checks, live Ollama generation status, and any unresolved failure modes.
+- Outstanding earlier verification items, including live Qdrant, marked passed / failed / pending accurately.
+- Final git status --short; whether anything was staged or committed.
+Stop after TASK-012. Do not implement TASK-013 FastAPI pipeline integration, create automated tests, or commit changes.
 
-TASK-010 completion handoff
-- Added backend/app/ingestion/indexing.py: async index_chunks(chunks, *, content_id, profile, ollama, qdrant, config=IndexingConfig()) with immutable EmbeddingProfile, IndexingConfig and IndexingResult; typed IndexingError. No routes, upload behavior, jobs, schema changes or dependencies changed.
-- Explicit supported profile: nomic-embed-text-latest-document-v1 / nomic-embed-text:latest / 768 dimensions / search_document prefix through the existing adapter (truncate=false). Config defaults: collection rag_nomic_documents_v1, batch size 16 (1–256).
-- UUIDv5 IDs derive from a versioned tuple of stable content identity, profile ID, original chunk index and text hash. Payloads retain content/profile/model, original text/hash/index, section paths, nullable lines, exact source spans, source reference, warnings and estimated tokens. No generation/activation records.
-- Collection existence, unnamed vector size and cosine metric are checked without recreation/deletion. All embeddings validate before point writes; bounded upserts wait for COMPLETED. A later upsert failure can leave partial or uncertain writes; errors report acknowledged counts and safe identical-input retry guidance. Embeddings are held in memory for the document. Changed chunk sets do not delete old points; latest model tags are not digest-pinned.
-- Passed compile/import, manual deterministic/distinct point construction and payload inspection, empty input/missing identity, unsupported profile/dimensions, invalid vector count/size/nonfinite values, and typed unavailable-Qdrant handling. Live Ollama sample returned two finite 768-dimensional vectors; deliberately missing model returned model_unavailable. No automated tests or mocks.
-- Docker Compose config validation passed. Docker daemon is unavailable (confirmed outside sandbox); local Qdrant probe failed. Live collection creation, upsert/payload/count inspection, repeat-index duplicate check, and incompatible live collection rejection remain pending. No live indexing success claimed; TASK-001 combined startup remains pending.
-- Preserved the pre-existing CURRENT-TASK.md modification. Nothing staged or committed.
+TASK-012 implementation handoff — 2026-10-18
+- Added `backend/app/rag/{__init__,generation}.py`. API: `async generate_grounded_answer(question: str, passages: Sequence[Passage], *, ollama: OllamaConnection, config: GroundingConfig = GroundingConfig()) -> GroundedAnswer`; runtime accepts ordered lists/tuples, not iterators. No retrieval, persistence or HTTP integration.
+- Frozen result: `answer`, `outcome` (`answered` / `insufficient_evidence`), `references: tuple[EvidenceReference, ...]`, `prompt_version`. Each reference contains `evidence_id` and the original TASK-011 `Passage`, retaining point/content/hash/profile/source/heading/line/span metadata. Only cited references are returned on success; abstentions have none.
+- Filter blank text/missing identities or invalid chunk index/profile; deduplicate point ID and per-content hash in input order. Assign E1 onward to included whole blocks; omit blocks that do not fit and consider subsequent smaller blocks. Never synthesize source metadata or truncate source text.
+- `GroundingConfig(num_ctx=4096, num_predict=512, safety_tokens=256)` validates adapter bounds and leaves at least 1024 input tokens. Approximate conservative estimator charges one serialized UTF-8 byte per token, including instructions, question, metadata and delimiters; output and safety are reserved. Reject question >4096 bytes, >80 passages, passage representation >65536 bytes, aggregate >262144 bytes, or framing/question beyond the remaining budget.
+- Prompt `grounding-v1`: JSON-delimited untrusted source blocks, evidence-only answers, exact [E#] citations, explicit insufficiency sentinel and `/no_think`. Uses configured model (`qwen3:4b` observed), temperature=0, context/output options above, and existing adapter `think=False`, timeout and typed failures. No adapter changes or retries.
+- Validation rejects unknown, malformed/combined or absent citations, empty/citation-only output, explicit insufficiency and common refusal phrases. A stable abstention is returned when evidence is absent/omitted or response validation fails. Citation checks establish provenance only, NOT factual entailment, complete sentence coverage or prompt-injection immunity. Refusal matching is intentionally conservative and can false-abstain. Adapter failures (including its rejection of empty model responses) propagate as typed Ollama errors.
+- Passed: Python compile/import, whitespace diff check, disposable in-memory manual checks with two benign passages; inspected prompt, IDs and retained metadata; duplicate ID, blank question, missing text/content identity, question/per-passage/aggregate caps, budget omission, known/unknown/mixed/malformed/absent citations, blank/citation-only output and refusal handling. Empty evidence with a closed real client abstained without any dependency call. No automated tests or test files added.
+- Live Ollama discovery passed outside sandbox: configured `qwen3:4b` present. Both relevant and unrelated questions ran through the real service and returned citation-free abstentions. Relevant-answer verification FAILED to demonstrate an answered result: raw diagnostic calls showed repetitive analysis mentioning the insufficiency sentinel and reaching the output cap, despite `think=False`, explicit final-answer instruction and `/no_think`. Conservative validation rejected this output; unrelated-question abstention observed. No claim of successful live grounded answer or guaranteed model grounding. Local model/template behavior remains an unresolved limitation; no adapter redesign or model changes made.
+- Earlier checks preserved as recorded in PROJECT-MAP: TASK-005 connectivity and TASK-010/TASK-011 live Qdrant checks passed previously on 2026-10-18, not rerun here. TASK-001 combined frontend/backend startup remains pending.
+- Existing CURRENT-TASK edits preserved. Nothing staged or committed; stopped after TASK-012.
