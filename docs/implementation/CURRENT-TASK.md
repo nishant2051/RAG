@@ -1,6 +1,6 @@
 TASK-009 — Deterministic Structure-Aware Chunking
 Milestone: M2 — First Working RAG
-Status: Ready (TASK-007 and TASK-008 remain uncommitted)
+Status: Complete — TASK-009 lightweight checks passed; no staging or commit performed
 Depends on: TASK-008 structured TXT/Markdown parsing; TASK-007 content identity/storage
 Objective
 Implement a small, deterministic chunker that transforms the existing immutable parsed-document/block representation into ordered, source-traceable text chunks for future embedding. This task does not generate embeddings, write vectors, create indexing jobs, or change upload behavior.
@@ -28,3 +28,9 @@ Manual verification only — no test files
 Stop conditions and output
 If parser metadata lacks enough information for honest source mapping, preserve nullable metadata and note the limitation; do not redesign the parsers. If a truly missing prerequisite requires unrelated changes, stop and report the blocker with the relevant paths. Do not expand into embeddings/indexing or unrelated refactors.
 Respond briefly with: changed files; chunking API/defaults; manual checks/results; pending issues; Git status (explicitly note whether TASK-007/008 remain uncommitted). Do not stage or commit. Stop after TASK-009.
+TASK-009 completion handoff
+- Added standalone ingestion/chunking.py: immutable config/chunks/source spans, section-aware grouping, deterministic safe-boundary splitting, bounded same-section overlap, SHA-256 text hashes, and typed empty-extraction failure. No workflow wiring or dependencies.
+- Defaults: target 500, overlap 75, hard maximum 1000 estimated tokens. Estimate is ceil(Unicode characters / 4), not a verified Nomic tokenizer. TASK-010 must use truncate=false and handle oversized-input rejection.
+- Source spans retain exact half-open block character offsets and original enclosing block lines. Chunk lines are nullable for split blocks; no page metadata is fabricated.
+- Passed Python compile/import and one-off manual TXT/Markdown checks (headings, lists, fenced code, oversized paragraphs), repeated-output equality, changed configuration, complete source-offset coverage, overlap inspection, hard limits, tiny/unbroken inputs, invalid settings, empty extraction, and unknown-type warnings. No automated tests created.
+- Initial Git status was clean despite the supplied TASK-007/008 uncommitted handoff description. No existing changes were modified, staged, or committed. Earlier combined frontend/backend and Docker/Qdrant checks remain pending.

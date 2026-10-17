@@ -29,10 +29,12 @@
 
 - `backend/app/ingestion/parsers/` — internal `parse_document(bytes, "txt" | "md", source_reference=...)`; immutable parsed document/blocks, typed extraction failures, UTF-8 BOM support, normalized one-based inclusive line locations, heading paths and parser identifiers. Markdown uses locked markdown-it-py with tables; lists retain source formatting. No upload trigger or indexing. TASK-008 lightweight manual/compile checks passed; changes remain uncommitted.
 
+- `backend/app/ingestion/chunking.py` — standalone deterministic structure-aware chunk_document API; immutable config/chunks, exact block offsets, estimated token limits, bounded overlap and SHA-256 hashes. TASK-009 compile/import and manual checks passed; no upload/indexing integration.
+
 ## Planned backend domains (create only when tasked)
 
 - `collections/` — collection lifecycle.
-- `ingestion/`, `jobs/` — remaining chunking, persistent worker and checkpoints.
+- `ingestion/`, `jobs/` — persistent worker and checkpoints.
 - `indexing/`, `embeddings/` — generations, profiles, Qdrant and embedding calls.
 - `retrieval/`, `generation/`, `chat/` — search, context/prompt, streamed responses and sessions.
 - `infrastructure/` — external adapters (SQLite, Qdrant, Ollama and filesystem).
