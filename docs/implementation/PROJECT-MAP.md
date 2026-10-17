@@ -1,6 +1,6 @@
 # Project Map — Actual Codebase Inventory
 
-**Status:** TASK-007 upload/storage implemented and lightweight upload checks passed; TASK-006 live Ollama checks passed; Docker Compose/live Qdrant verification pending (Docker CLI unavailable). TASK-001 combined scaffold manual smoke check remains pending.
+**Status:** TASK-007 upload/storage implemented and lightweight upload checks passed; TASK-006 live Ollama checks passed; Docker Compose config validation passed; live Qdrant verification pending (Docker daemon unavailable). TASK-001 combined scaffold manual smoke check remains pending.
 
 ## Root layout
 
@@ -30,6 +30,8 @@
 - `backend/app/ingestion/parsers/` — internal `parse_document(bytes, "txt" | "md", source_reference=...)`; immutable parsed document/blocks, typed extraction failures, UTF-8 BOM support, normalized one-based inclusive line locations, heading paths and parser identifiers. Markdown uses locked markdown-it-py with tables; lists retain source formatting. No upload trigger or indexing. TASK-008 lightweight manual/compile checks passed; changes remain uncommitted.
 
 - `backend/app/ingestion/chunking.py` — standalone deterministic structure-aware chunk_document API; immutable config/chunks, exact block offsets, estimated token limits, bounded overlap and SHA-256 hashes. TASK-009 compile/import and manual checks passed; no upload/indexing integration.
+
+- `backend/app/ingestion/indexing.py` — async `index_chunks` with explicit Nomic document profile (768 dimensions), default batch size 16 and collection `rag_nomic_documents_v1`; stable content/profile/index/hash UUIDv5 points and complete chunk payload metadata. Reuses existing Ollama/Qdrant connections; verifies cosine collection and completed upserts. No jobs or activation. TASK-010 compile/import, offline manual construction/error checks, live Ollama embeddings and missing-model errors passed. Compose config passed; Docker daemon/Qdrant unavailable, so live upsert/reindex/config-mismatch checks remain pending. Partial upserts possible; identical-input retries reuse IDs.
 
 ## Planned backend domains (create only when tasked)
 
