@@ -26,6 +26,8 @@ class Settings(BaseModel):
     ollama_generation_model: str = "qwen3:4b"
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_timeout_seconds: int = Field(default=3, ge=1, le=60)
+    storage_root: Path = BACKEND_ROOT / "data" / "storage"
+    upload_max_bytes: int = Field(default=100 * 1024 * 1024, ge=1, le=100 * 1024 * 1024)
     database_path: Path = BACKEND_ROOT / "data" / "rag.sqlite3"
     host: str = "127.0.0.1"
     port: int = Field(default=8000, ge=1, le=65535)
@@ -51,6 +53,18 @@ class Settings(BaseModel):
         if not value or value != value.strip() or any(c.isspace() for c in value):
             raise ValueError("model tag must be nonempty and contain no whitespace")
         return value
+
+    @field_validator("storage_root", mode="before")
+    @classmethod
+    def local_storage_root(cls, value: str | Path) -> Path:
+        raw = str(value)
+        if not raw.strip() or raw != raw.strip() or ":" in raw or "\\" in raw or raw.startswith("//") or "\x00" in raw:
+            raise ValueError("storage_root must be a local directory path")
+        path = Path(raw).expanduser()
+        path = (path if path.is_absolute() else BACKEND_ROOT / path).resolve()
+        if path.exists() and not path.is_dir():
+            raise ValueError("storage_root must be a directory")
+        return path
 
     @field_validator("database_path", mode="before")
     @classmethod
@@ -95,7 +109,7 @@ class Settings(BaseModel):
 def load_settings() -> Settings:
     # Fixed repository path, independent of cwd; do not mutate process environment.
     environment = {**dotenv_values(BACKEND_ROOT.parent / ".env", interpolate=False), **os.environ}
-    values = {key: environment[f"RAG_{key.upper()}"] for key in ("host", "port", "environment", "database_path") if f"RAG_{key.upper()}" in environment}
+    values = {key: environment[f"RAG_{key.upper()}"] for key in ("host", "port", "environment", "database_path", "storage_root", "upload_max_bytes") if f"RAG_{key.upper()}" in environment}
     if "RAG_CORS_ORIGINS" in environment:
         values["cors_origins"] = environment["RAG_CORS_ORIGINS"].split(",")
     for key in ("qdrant_url", "qdrant_timeout_seconds", "ollama_base_url", "ollama_timeout_seconds", "ollama_embed_model", "ollama_generation_model"):

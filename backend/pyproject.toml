@@ -15,6 +15,7 @@ dependencies = [
     "httpx>=0.28,<0.29",
     "qdrant-client>=1.15,<1.16",
     "python-dotenv>=1,<2",
+    "python-multipart>=0.0.20,<0.1",
 ]
 
 [tool.setuptools.packages.find]

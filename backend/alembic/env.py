@@ -3,6 +3,7 @@
 from alembic import context
 
 from app.infrastructure.database import Base, engine
+from app.documents import models  # noqa: F401 — register upload metadata
 
 
 def run_migrations_offline() -> None:
