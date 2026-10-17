@@ -1,0 +1,1 @@
+"""Internal scoped passage retrieval."""

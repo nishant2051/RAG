@@ -1,6 +1,6 @@
 # Project Map — Actual Codebase Inventory
 
-**Status:** TASK-007 upload/storage implemented and lightweight upload checks passed; TASK-006 live Ollama checks passed; Docker Compose config validation passed; live Qdrant verification pending (Docker daemon unavailable). TASK-001 combined scaffold manual smoke check remains pending.
+**Status:** TASK-007 upload/storage implemented and lightweight upload checks passed; TASK-006 live Ollama checks passed; Docker Compose config validation passed; live Qdrant connectivity, indexing/reindex and TASK-011 retrieval verification passed on 2026-10-18 using a disposable collection. TASK-001 combined scaffold manual smoke check remains pending.
 
 ## Root layout
 
@@ -31,14 +31,16 @@
 
 - `backend/app/ingestion/chunking.py` — standalone deterministic structure-aware chunk_document API; immutable config/chunks, exact block offsets, estimated token limits, bounded overlap and SHA-256 hashes. TASK-009 compile/import and manual checks passed; no upload/indexing integration.
 
-- `backend/app/ingestion/indexing.py` — async `index_chunks` with explicit Nomic document profile (768 dimensions), default batch size 16 and collection `rag_nomic_documents_v1`; stable content/profile/index/hash UUIDv5 points and complete chunk payload metadata. Reuses existing Ollama/Qdrant connections; verifies cosine collection and completed upserts. No jobs or activation. TASK-010 compile/import, offline manual construction/error checks, live Ollama embeddings and missing-model errors passed. Compose config passed; Docker daemon/Qdrant unavailable, so live upsert/reindex/config-mismatch checks remain pending. Partial upserts possible; identical-input retries reuse IDs.
+- `backend/app/ingestion/indexing.py` — async `index_chunks` with explicit Nomic document profile (768 dimensions), default batch size 16 and collection `rag_nomic_documents_v1`; stable content/profile/index/hash UUIDv5 points and complete chunk payload metadata. Reuses existing Ollama/Qdrant connections; verifies cosine collection and completed upserts. No jobs or activation. TASK-010 compile/import, offline manual construction/error checks, live Ollama embeddings and missing-model errors passed. Compose config passed; live Qdrant upsert/reindex/config-mismatch checks passed on 2026-10-18 in a disposable collection. Partial upserts possible; identical-input retries reuse IDs.
+
+- `backend/app/retrieval/{__init__,search}.py` — TASK-011 internal `async search_passages(question, *, scope: RetrievalScope, ollama, qdrant, config: RetrievalConfig = RetrievalConfig()) -> tuple[Passage, ...]`; explicit content IDs plus `EmbeddingProfile`, server-side content/profile filters, empty-scope dependency skip, existing Nomic query adapter and 768-dimensional cosine collection validation. Immutable passages carry text/raw score/point ID/content/chunk index/hash/profile and nullable source/heading/line/span metadata; point-ID and per-content exact-hash deduplication, deterministic candidate ties. Defaults top_k=5 (1–20), candidate_multiplier=2 (1–4), optional min_score=None. Compile/import, disposable manual checks and live Ollama query vector passed; live Qdrant retrieval, server-side exclusion, repeat stability, top_k, exact-hash deduplication, metadata and collection-mismatch checks passed on 2026-10-18; TASK-005 connectivity and TASK-010 upsert/reindex/config-mismatch also passed. Disposable collection removed. No indexing schema changes or generation authorization resolver.
 
 ## Planned backend domains (create only when tasked)
 
 - `collections/` — collection lifecycle.
 - `ingestion/`, `jobs/` — persistent worker and checkpoints.
 - `indexing/`, `embeddings/` — generations, profiles, Qdrant and embedding calls.
-- `retrieval/`, `generation/`, `chat/` — search, context/prompt, streamed responses and sessions.
+- `generation/`, `chat/` — context/prompt, streamed responses and sessions; `retrieval/` extensions only when tasked.
 - `infrastructure/` — external adapters (SQLite, Qdrant, Ollama and filesystem).
 - `api/`, `config/` — HTTP endpoints and typed settings.
 
