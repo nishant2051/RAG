@@ -1,55 +1,30 @@
-# TASK-007 — Single-Document Upload and Content-Addressed Storage
-
-**Milestone:** M2 — First Working RAG
-**Status:** Complete — prescribed lightweight verification passed.
-**Dependencies:** TASK-001–006 completed; Docker/Qdrant live check and combined frontend/backend smoke check remain pending and are **not** prerequisites for this task.
-
-## Objective
-Implement one-file upload through FastAPI with safe validation, SHA-256 content-addressed local storage, and an HTTP response identifying the uploaded document. This task establishes the upload/storage boundary only. Parsing, chunking, embeddings, Qdrant indexing, durable ingestion workers, and frontend upload UI belong to later tasks.
-
-## Context and discovery budget
-1. Read root `AGENTS.md`, this `docs/implementation/CURRENT-TASK.md`, and only the **documents/storage/API/configuration** sections of `docs/implementation/PROJECT-MAP.md`.
-2. Inspect only existing FastAPI router registration, typed settings, error handling, persistence foundation, and relevant dependency declarations. Discover actual paths first: names below are **suggested locations**, not claims that these files exist.
-3. Do **not** read `docs/reference/`, previous task files, or the full roadmap. If implementation requires broad repository exploration or architectural changes, stop and report the blocker.
-
-## Files and change boundaries
-**Suggested new files (adapt to existing module conventions):**
-- `backend/app/documents/router.py` — POST upload route.
-- `backend/app/documents/service.py` — upload coordination, hashes, and metadata.
-- `backend/app/infrastructure/storage/local.py` — content-addressed filesystem operations.
-- Minimal document ORM/schema and Alembic revision **only if necessary** to persist upload identity and storage references; use existing SQLAlchemy/Alembic conventions.
-
-**Inspect/modify only as necessary:** application router registration, existing configuration/error schemas, backend dependencies/environment example, and concise project-map/task progress entries. Do not modify frontend or Ollama/Qdrant adapters.
-
-## Required behavior
-1. Implement `POST /api/v1/documents` accepting **exactly one** multipart file; successful accepted requests return **202 Accepted** and resource-shaped JSON with `document_id`, `job_id` (nullable for this temporary pre-ingestion slice), and a truthful `status` indicating **stored / pending indexing**, not indexed or ready. If a non-null `job_id` is returned, it must refer to a persisted job; never invent an ID or promise an indexing job that does not exist.
-2. Enforce configurable upload size maximum **100 MB**, streaming/limited reads to prevent accepting oversized payloads. Reject unsupported formats with HTTP **415**, oversize with **413**, empty files with a stable validation error, and use existing standard error envelope/request ID behavior. Initial supported formats are `.txt` and `.md`; PDF/DOCX will follow in M3. Do not trust filename or client-provided MIME type alone; apply conservative lightweight content validation appropriate to TXT/Markdown.
-3. Compute SHA-256 over raw file bytes and write once into a server-controlled, content-addressed directory under a configured storage root. Use temporary files and an atomic final rename (same filesystem); avoid partial final files, path traversal, and collisions. Never use a supplied filename as a storage path.
-4. Store a logical upload/document record with a UUID, original display filename, content SHA-256, stored object reference, creation timestamp, and explicit **not-indexed** state. Identical bytes uploaded under different names must create distinct logical document identities while reusing the underlying content object. If the full final schema is not yet available, implement the smallest forward-compatible persistence slice using SQLAlchemy/Alembic, without inventing embeddings, generations or indexing state.
-5. Accept an optional `Idempotency-Key` per agreed API. Within a 24-hour retention window, a repeated equivalent upload with the same key must resolve to the same logical operation; the same key with different content must return **409**. Enforce uniqueness transactionally for concurrent requests. If implementing this requires schema refinements, keep them focused here and document any necessary follow-up; don't replace idempotency with content-hash deduplication.
-6. If file persistence succeeds but database persistence fails, perform best-effort cleanup only for unreferenced temporary content, and avoid deleting an object used by another document. Record failures with existing structured logging and sanitized API errors.
-7. Do not start ingestion jobs or report searchability in this task. A later task will connect stored uploads to parsing and indexing. Keep the route and service ready to be extended without implementing that extension now.
-
-## Explicit exclusions
-- No document parser/chunker, Ollama or Qdrant calls, embeddings, vector collections, retrieval or generation.
-- No background worker or staging index lifecycle in this task.
-- No frontend work, bulk/folder import, collection management, soft delete, replacement, or reindex.
-- **No automated tests**, fixtures, test frameworks, broad refactoring, or new dependencies without a clear need.
-
-## Lightweight verification (no test files)
-- Python compile/import check and Alembic migration applied to a disposable SQLite database, if schema added.
-- Start backend on loopback and manually upload one small TXT and one Markdown file. Confirm 202, real UUIDs, saved content hashing correctly, and status accurately indicates not indexed.
-- Repeat identical bytes under a different filename: confirm two logical IDs and one underlying content object. Repeat with identical idempotency key: confirm original logical result; reuse key with changed content: confirm 409.
-- Manually confirm empty/unsupported/oversized file failure behavior with suitably lightweight commands (avoid generating or logging giant files).
-- Confirm `/health/live` still works and `git diff --check` passes. Record skipped checks honestly.
-
-## Handoff and Git
-- Preserve unrelated changes. Keep task progress and `PROJECT-MAP.md` accurate; do not mark pending TASK-001 combined smoke or TASK-005 Docker/Qdrant checks as complete unless actually performed.
-- Create one focused Git commit **only if prescribed checks pass**; otherwise stop with blockers and no commit.
-- Completion response: commit hash, files changed (brief), checks run/pending, blockers. **Stop after TASK-007.**
-
-## TASK-007 completion
-- Implemented one-file TXT/Markdown upload, conservative UTF-8 validation, bounded reads, SHA-256 atomic local storage, logical document persistence and transactional 24-hour idempotency. Status is `stored_pending_indexing`; `job_id` is null.
-- Idempotency equivalence includes raw content and sanitized display filename; MIME is not trusted. Published objects are retained on DB failure to avoid deleting shared content; temporary files receive best-effort cleanup. Orphan-object reclamation is a later follow-up.
-- Passed: compile/import, Alembic upgrade on disposable SQLite, live loopback TXT/Markdown uploads, UUID/hash/status checks, separate identities sharing one object, idempotent replay and conflict, concurrent same-key replay, empty/unsupported/binary/multiple-file rejection, oversize rejection using a configured 1 KiB limit (including request-stream limit), `/health/live`, and diff whitespace check. No automated tests created or run.
-- TASK-001 combined frontend/backend smoke and TASK-005 Docker/Qdrant checks remain pending. No blockers.
+TASK-009 — Deterministic Structure-Aware Chunking
+Milestone: M2 — First Working RAG
+Status: Ready (TASK-007 and TASK-008 remain uncommitted)
+Depends on: TASK-008 structured TXT/Markdown parsing; TASK-007 content identity/storage
+Objective
+Implement a small, deterministic chunker that transforms the existing immutable parsed-document/block representation into ordered, source-traceable text chunks for future embedding. This task does not generate embeddings, write vectors, create indexing jobs, or change upload behavior.
+Critical working-tree handoff
+TASK-007 and TASK-008 changes are present in the working tree and nothing was staged or committed. TASK-007's Git permission request was rejected. Preserve every existing modification and untracked file. Do not stage, commit, reset, clean, stash, revert, or amend anything; do not re-request previously denied Git operations. Report Git status at the end. TASK-001 combined frontend/backend smoke and TASK-005 Docker/Qdrant checks remain pending unless actually performed.
+Context and inspection budget
+Read docs/implementation/CURRENT-TASK.md, applicable AGENTS.md, and only the ingestion/parser sections of PROJECT-MAP.md. Inspect the actual backend/app/ingestion/ parsed document/block types and parser/dispatcher, plus the relevant backend dependency manifest only as needed. Do not read reference design documents, old tasks, the full roadmap, frontend modules, API routes, unrelated DB/storage code, or broad repository listings. Paths below are suggestions; discover the actual parsed model before making code changes.
+Allowed changes
+Prefer creating backend/app/ingestion/chunking.py (or a small chunking/ package if the codebase requires it). Add only the necessary immutable chunk/result/config types alongside the existing ingestion models or inside that module. Touch parser models only for a minimal compatibility adjustment, and keep existing parser behavior unchanged. Update CURRENT-TASK.md / PROJECT-MAP.md minimally for handoff. Avoid new dependencies; if token estimation needs one, prefer a lightweight already-installed library or a documented deterministic approximation and explain limitations.
+Functional requirements
+1. Typed API. Expose a clear function or class that accepts the existing ParsedDocument and a validated ChunkingConfig and returns an ordered chunk collection. Defaults: target 500 tokens and overlap 75 tokens, both configurable; reject invalid or impossible settings (target <= 0, overlap < 0, overlap >= target). Keep ordering and output stable for identical input/configuration.
+2. Preserve structure. Respect source block order and heading/section boundaries. Prefer grouping adjacent blocks within a compatible section_path; don't combine unrelated sections just to reach the target. Treat code fences, lists, and tables as coherent blocks when they fit. Preserve meaningful Markdown/code content rather than aggressively normalizing it again.
+3. Oversized blocks. Deterministically split large paragraphs, lists, code blocks, and other oversized content at safe boundaries (paragraph/line/sentence, with a word/token fallback where needed). Ensure forward progress even with long unbroken text; never silently discard or truncate source text.
+4. Overlap. Apply up to the configured overlap at appropriate boundaries within the same compatible section; avoid copying text across unrelated headings. Preserve source order and avoid duplicate-only chunks. Overlap may be smaller than the target when structural boundaries make that necessary.
+5. Traceability. Each chunk should contain a stable positional index, text, section path, source location/page or line range when reliably available, estimated token count, content hash (SHA-256 of canonical chunk text), and extraction warnings or source block references if the current models support them. Never invent page numbers/line spans. Make deterministic chunk IDs/keys if useful, but do not create Qdrant point IDs (TASK-010).
+6. Embedding input boundary. Treat token counts as estimates unless using a verified tokenizer. Expose a configurable hard maximum and deterministically split until every produced chunk is within the chosen estimator-based limit; do not claim this proves compatibility with Nomic's actual tokenizer. TASK-010 must still call Ollama with truncate=false and handle an oversized-input rejection. Do not hardcode a Qwen generation-context limit into document chunking.
+7. Empty input. Return an explicit typed failure or empty-result policy consistent with the parser contract; never fabricate a chunk. Unexpected block types should be handled conservatively with a recorded warning rather than silently lost.
+8. No workflow changes. Existing upload responses must remain stored_pending_indexing with no job. Do not wire the chunker into HTTP ingestion, SQLite, Ollama, Qdrant, or background workers in this task.
+Manual verification only — no test files
+- Run Python compile/import checks for new and modified modules.
+- Run a short, one-off manual command (not a committed test) with TXT blocks and Markdown headings, lists, a fenced code block, and an oversized paragraph: inspect chunk order, section paths, overlap, and source location fields.
+- Repeat the same input/configuration and confirm identical text, order, hashes, and IDs if present; change config and confirm resulting boundaries can differ.
+- Verify small blocks, a long unbroken string, and invalid overlap settings behave predictably. Check that no source content disappears except duplication due to overlap (compare reconstructed non-overlap coverage manually where practical).
+- Review scoped whitespace/diff output and git status --short. Do not create pytest/unittest/Playwright files, fixtures, mocks, or automated test infrastructure. Do not mark earlier pending smoke checks as complete without performing them.
+Stop conditions and output
+If parser metadata lacks enough information for honest source mapping, preserve nullable metadata and note the limitation; do not redesign the parsers. If a truly missing prerequisite requires unrelated changes, stop and report the blocker with the relevant paths. Do not expand into embeddings/indexing or unrelated refactors.
+Respond briefly with: changed files; chunking API/defaults; manual checks/results; pending issues; Git status (explicitly note whether TASK-007/008 remain uncommitted). Do not stage or commit. Stop after TASK-009.

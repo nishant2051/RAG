@@ -20,11 +20,11 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseModel):
-    ollama_base_url: str = "http://127.0.0.1:11434"
+    ollama_base_url: str
     ollama_timeout_seconds: int = Field(default=120, ge=1, le=300)
-    ollama_embed_model: str = "nomic-embed-text:latest"
-    ollama_generation_model: str = "qwen3:4b"
-    qdrant_url: str = "http://127.0.0.1:6333"
+    ollama_embed_model: str
+    ollama_generation_model: str
+    qdrant_url: str
     qdrant_timeout_seconds: int = Field(default=3, ge=1, le=60)
     storage_root: Path = BACKEND_ROOT / "data" / "storage"
     upload_max_bytes: int = Field(default=100 * 1024 * 1024, ge=1, le=100 * 1024 * 1024)

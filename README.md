@@ -21,7 +21,8 @@ Run `make help` for available commands.
 
 The backend loads the repository-root `.env` file, regardless of working directory.
 Copy `.env.example` to `.env` and set your local values. Exported environment
-variables take precedence; validated defaults apply to omitted settings.
+variables take precedence. `OLLAMA_BASE_URL`, `OLLAMA_EMBED_MODEL`,
+`OLLAMA_GENERATION_MODEL` and `QDRANT_URL` are required; they have no code defaults.
 SQLite storage is configured by `RAG_DATABASE_PATH` (default `data/rag.sqlite3`,
 relative to `backend/`); run `make migrate` to apply its schema.
 Document ingestion and chat remain future tasks.
@@ -48,7 +49,7 @@ Only HTTP port 6333 is published, on `127.0.0.1`; gRPC is not published.
 The `local-rag_qdrant_data` named volume persists across stop/start and Compose down;
 do not use `down -v` unless intending to delete data. No collections are created.
 The URL must use loopback HTTP(S); timeout is an integer from 1 to 60 seconds.
-Defaults match the exports above. Qdrant is optional at API startup.
+Set `QDRANT_URL` in root `.env` or export it as above. Qdrant is optional at API startup.
 Dependency diagnostics return HTTP 200 with Qdrant `healthy` or `unavailable`,
 using a bounded, request-scoped [server-info probe](https://api.qdrant.tech/api-reference/service/root).
 SQLite diagnostics remain a placeholder; Ollama diagnostics report availability and configured model presence. `/health/live` stays independent;
@@ -72,9 +73,9 @@ before debugging to free ports 8000 and 5173. Stopping the compound ends both
 debug sessions; use **Tasks: Terminate Task** to stop the frontend Vite task.
 
 Local Ollama is optional at startup. Set `OLLAMA_BASE_URL` in root `.env` (loopback HTTP(S),
-default `http://127.0.0.1:11434`), `OLLAMA_TIMEOUT_SECONDS` (1–300, default 120),
-`OLLAMA_EMBED_MODEL` (default `nomic-embed-text:latest`) and
-`OLLAMA_GENERATION_MODEL` (default `qwen3:4b`) to configure your local service and models.
+example `http://127.0.0.1:11434`), `OLLAMA_TIMEOUT_SECONDS` (1–300, default 120),
+`OLLAMA_EMBED_MODEL` (example `nomic-embed-text:latest`) and
+`OLLAMA_GENERATION_MODEL` (example `qwen3:4b`) to configure your local service and models.
 Models are never downloaded automatically. Manual adapter smoke command:
 
 ```sh

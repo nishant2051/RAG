@@ -16,6 +16,7 @@ dependencies = [
     "qdrant-client>=1.15,<1.16",
     "python-dotenv>=1,<2",
     "python-multipart>=0.0.20,<0.1",
+    "markdown-it-py>=3,<4",
 ]
 
 [tool.setuptools.packages.find]

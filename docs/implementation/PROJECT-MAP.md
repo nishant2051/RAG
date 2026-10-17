@@ -27,10 +27,12 @@
 - `backend/app/infrastructure/storage/local.py` — bounded upload staging, raw SHA-256 hashing, atomic content-addressed publication and temporary cleanup. `RAG_STORAGE_ROOT` defaults to `data/storage`; `RAG_UPLOAD_MAX_BYTES` defaults to 104857600 (100 MiB), configurable downward. Published orphan objects are retained on DB failure; reclamation remains a follow-up.
 - `backend/alembic/versions/0002_uploads.py` — logical documents and expiring unique upload keys; multipart parsing uses locked python-multipart. Disposable migration and manual upload checks passed.
 
+- `backend/app/ingestion/parsers/` — internal `parse_document(bytes, "txt" | "md", source_reference=...)`; immutable parsed document/blocks, typed extraction failures, UTF-8 BOM support, normalized one-based inclusive line locations, heading paths and parser identifiers. Markdown uses locked markdown-it-py with tables; lists retain source formatting. No upload trigger or indexing. TASK-008 lightweight manual/compile checks passed; changes remain uncommitted.
+
 ## Planned backend domains (create only when tasked)
 
 - `collections/` — collection lifecycle.
-- `ingestion/`, `jobs/` — parsers, chunking, persistent worker and checkpoints.
+- `ingestion/`, `jobs/` — remaining chunking, persistent worker and checkpoints.
 - `indexing/`, `embeddings/` — generations, profiles, Qdrant and embedding calls.
 - `retrieval/`, `generation/`, `chat/` — search, context/prompt, streamed responses and sessions.
 - `infrastructure/` — external adapters (SQLite, Qdrant, Ollama and filesystem).
